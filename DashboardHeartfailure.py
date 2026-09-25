@@ -171,25 +171,15 @@ st.markdown("""
 
 @st.cache_data
 def load_data():
-
-    df = pd.read_csv("Cardiac_Cleaned_Data.csv")
-
+    df = pd.read_excel("Cardiac_Cleaned_Data.xlsb", engine="pyxlsb")
     return df
 
 
 try:
-
     df = load_data()
-
 except Exception as e:
-
-    st.error(
-        "Could not load heart_failure.csv. "
-        "Please place the CSV file in the same folder as app.py."
-    )
-
+    st.error(f"Could not load Cardiac_Cleaned_Data.xlsb: {e}")
     st.stop()
-
 
 # ============================================================
 # COLUMN DETECTION
