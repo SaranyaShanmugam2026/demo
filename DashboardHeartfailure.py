@@ -172,7 +172,7 @@ st.markdown("""
 @st.cache_data
 def load_data():
 
-    df = pd.read_csv("heart_failure.csv")
+    df = pd.read_csv("Cardiac_Cleaned_Data.csv")
 
     return df
 
