@@ -169,69 +169,27 @@ st.markdown("""
 # LOAD DATA
 # ============================================================
 
-# ============================================================
-# DATA UPLOAD
-# ============================================================
-# The dashboard now lets the user upload the cleaned dataset
-# directly from the Streamlit interface. No dataset needs to be
-# hard-coded into the Python file.
-
-with st.sidebar:
-    st.markdown("### 📂 Data Source")
-    uploaded_file = st.file_uploader(
-        "Upload cleaned patient data",
-        type=["xlsb", "xlsx", "csv"],
-        help="Upload Cardiac_Cleaned_Data.xlsb, .xlsx, or .csv"
-    )
-
-
 @st.cache_data
-def load_uploaded_data(file_bytes, file_name):
-    from io import BytesIO
+def load_data():
 
-    ext = file_name.lower().split(".")[-1]
+    data_file = "Cardiac_Cleaned_Data.xlsb"
 
-    if ext == "xlsb":
-        return pd.read_excel(
-            BytesIO(file_bytes),
-            engine="pyxlsb"
-        )
-    elif ext in ["xlsx", "xls"]:
-        return pd.read_excel(
-            BytesIO(file_bytes)
-        )
-    elif ext == "csv":
-        return pd.read_csv(
-            BytesIO(file_bytes)
-        )
-    else:
-        raise ValueError("Unsupported file type.")
-
-
-if uploaded_file is None:
-    st.info(
-        "📂 Please upload your cleaned dataset to start the dashboard. "
-        "Accepted formats: XLSB, XLSX, or CSV."
+    return pd.read_excel(
+        data_file,
+        engine="pyxlsb"
     )
-    st.stop()
+
 
 try:
-    df = load_uploaded_data(
-        uploaded_file.getvalue(),
-        uploaded_file.name
-    )
 
-    st.sidebar.success(
-        f"Loaded: {uploaded_file.name}"
-    )
-    st.sidebar.caption(
-        f"{len(df):,} patients • {df.shape[1]:,} columns"
-    )
+    df = load_data()
 
 except Exception as e:
+
     st.error(
-        f"Could not read the uploaded file: {e}"
+        f"Could not load Cardiac_Cleaned_Data.xlsb from the GitHub repository: {e}"
     )
+
     st.stop()
 
 
