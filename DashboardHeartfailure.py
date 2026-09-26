@@ -1,7 +1,8 @@
 # ============================================================
-# HEART FAILURE CLINICAL ANALYTICS & AI DASHBOARD
+# HEART FAILURE CLINICAL ANALYTICS & PREDICTION DASHBOARD
 # ============================================================
-# Descriptive + Predictive + Data-Driven Prescriptive Analytics
+# Descriptive + Predictive + Prescriptive/Decision-Support Analytics
+# Research / analytical use only — not a clinical diagnosis tool.
 # ============================================================
 
 import streamlit as st
@@ -11,10 +12,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import (
     accuracy_score,
@@ -23,7 +21,7 @@ from sklearn.metrics import (
     f1_score,
     roc_auc_score,
     confusion_matrix,
-    roc_curve
+    roc_curve,
 )
 
 # ============================================================
@@ -31,347 +29,454 @@ from sklearn.metrics import (
 # ============================================================
 
 st.set_page_config(
-    page_title="Heart Failure Clinical Analytics",
+    page_title="HeartCare AI | Heart Failure Analytics",
     page_icon="❤️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 # ============================================================
 # CSS
 # ============================================================
 
-st.markdown("""
-<style>
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background: #f4f9fb;
+    }
 
-.stApp {
-    background-color: #F4F9FB;
-}
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #064e5b 0%, #087f70 100%);
+    }
 
-/* Main header */
-.hospital-header {
-    background: linear-gradient(
-        90deg,
-        #075985,
-        #0F766E
-    );
-    padding: 28px;
-    border-radius: 18px;
-    color: white;
-    text-align: center;
-    margin-bottom: 25px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.10);
-}
+    [data-testid="stSidebar"] * {
+        color: white !important;
+    }
 
-.hospital-header h1 {
-    font-size: 34px;
-    margin-bottom: 8px;
-}
+    .main-header {
+        background: linear-gradient(90deg, #075985, #0f766e);
+        padding: 28px;
+        border-radius: 18px;
+        color: white;
+        margin-bottom: 22px;
+        box-shadow: 0 5px 18px rgba(0,0,0,0.10);
+    }
 
-.hospital-header p {
-    font-size: 16px;
-    margin: 0;
-}
+    .main-header h1 {
+        margin: 0;
+        font-size: 34px;
+    }
 
-/* Section titles */
-.main-title {
-    font-size: 30px;
-    font-weight: 700;
-    color: #083B4C;
-    margin-bottom: 5px;
-}
+    .main-header p {
+        margin: 8px 0 0 0;
+        font-size: 16px;
+    }
 
-.subtitle {
-    font-size: 16px;
-    color: #527080;
-    margin-bottom: 20px;
-}
+    .section-card {
+        background: white;
+        padding: 20px;
+        border-radius: 16px;
+        border-left: 6px solid #0f766e;
+        margin-bottom: 18px;
+        box-shadow: 0 3px 14px rgba(0,0,0,0.06);
+    }
 
-/* KPI cards */
-.metric-card {
-    background: white;
-    border-radius: 15px;
-    padding: 20px;
-    text-align: center;
-    min-height: 145px;
-    border-left: 6px solid #0F766E;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
-}
+    .metric-card {
+        background: white;
+        padding: 18px;
+        border-radius: 16px;
+        border-left: 5px solid #0f766e;
+        text-align: center;
+        box-shadow: 0 3px 14px rgba(0,0,0,0.06);
+    }
 
-.metric-icon {
-    font-size: 30px;
-    margin-bottom: 5px;
-}
+    .metric-title {
+        font-size: 14px;
+        color: #475569;
+        margin-bottom: 5px;
+    }
 
-.metric-title {
-    font-size: 14px;
-    color: #557080;
-    font-weight: 600;
-}
+    .metric-value {
+        font-size: 27px;
+        font-weight: 700;
+        color: #0f3d4c;
+    }
 
-.metric-value {
-    font-size: 27px;
-    font-weight: 700;
-    color: #083B4C;
-    margin-top: 8px;
-}
+    .research-note {
+        background: #e8f4f8;
+        padding: 16px;
+        border-radius: 12px;
+        border-left: 5px solid #0284c7;
+    }
 
-/* Information boxes */
-.info-box {
-    background: #EAF5F8;
-    border-left: 6px solid #087F9B;
-    padding: 18px;
-    border-radius: 10px;
-    margin: 15px 0;
-}
-
-.insight-box {
-    background: #EEF8F3;
-    border-left: 6px solid #0F766E;
-    padding: 18px;
-    border-radius: 10px;
-    margin: 12px 0;
-}
-
-.warning-box {
-    background: #FFF7E6;
-    border-left: 6px solid #D97706;
-    padding: 18px;
-    border-radius: 10px;
-    margin: 12px 0;
-}
-
-.risk-box {
-    background: #FEF2F2;
-    border-left: 6px solid #DC2626;
-    padding: 18px;
-    border-radius: 10px;
-}
-
-/* Sidebar */
-section[data-testid="stSidebar"] {
-    background: linear-gradient(
-        180deg,
-        #064E5B,
-        #087F6B
-    );
-}
-
-section[data-testid="stSidebar"] * {
-    color: white !important;
-}
-
-/* Tables */
-.dataframe {
-    font-size: 14px;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
+    .risk-note {
+        background: #fff7ed;
+        padding: 16px;
+        border-radius: 12px;
+        border-left: 5px solid #f97316;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # ============================================================
 # HEADER
 # ============================================================
 
-st.markdown("""
-<div class="hospital-header">
-
-<h1>❤️ Heart Failure Clinical Analytics & AI</h1>
-
-<p>
-Descriptive Analytics • Mortality Risk Analysis •
-Artificial Neural Network Prediction • Data-Driven Insights
-</p>
-
-</div>
-""", unsafe_allow_html=True)
-
+st.markdown(
+    """
+    <div class="main-header">
+        <h1>❤️ HeartCare AI</h1>
+        <p>Heart Failure Clinical Analytics, Mortality Prediction & Decision Support</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 # ============================================================
-# LOAD DATA
+# DATA LOADING
 # ============================================================
+
+DATA_FILE = "Cardiac_Cleaned_Data.xlsb"
+
 
 @st.cache_data
 def load_data():
-
-    df = pd.read_excel(
-        "Cardiac_Cleaned_Data.xlsb",
-        engine="pyxlsb"
-    )
-
-    return df
+    return pd.read_excel(DATA_FILE, engine="pyxlsb")
 
 
 try:
-
     df = load_data()
-
 except Exception as e:
-
     st.error(
-        f"Could not load Cardiac_Cleaned_Data.xlsb: {e}"
+        f"Could not load {DATA_FILE}. "
+        f"Make sure the actual .xlsb file is in the same GitHub folder "
+        f"as DashboardHeartfailure.py. Error: {e}"
     )
-
     st.stop()
 
-
 # ============================================================
-# BASIC CLEANING
+# COLUMN HELPERS
 # ============================================================
 
-df.columns = [
-    str(c).strip()
-    for c in df.columns
-]
+def normalize_name(x):
+    return (
+        str(x)
+        .strip()
+        .lower()
+        .replace("_", "")
+        .replace("-", "")
+        .replace(" ", "")
+        .replace("/", "")
+        .replace("(", "")
+        .replace(")", "")
+    )
 
-# Remove completely empty rows
-df = df.dropna(how="all").copy()
+
+NORMALIZED_COLUMNS = {normalize_name(c): c for c in df.columns}
+
+
+def find_col(candidates):
+    """
+    Finds a column using exact normalized names first,
+    then partial normalized-name matching.
+    """
+    for candidate in candidates:
+        key = normalize_name(candidate)
+        if key in NORMALIZED_COLUMNS:
+            return NORMALIZED_COLUMNS[key]
+
+    for candidate in candidates:
+        key = normalize_name(candidate)
+        for normalized, original in NORMALIZED_COLUMNS.items():
+            if key and (key in normalized or normalized in key):
+                return original
+
+    return None
 
 
 # ============================================================
 # COLUMN DETECTION
 # ============================================================
 
-def normalize_column(name):
-
-    return (
-        str(name)
-        .lower()
-        .strip()
-        .replace(" ", "_")
-        .replace("-", "_")
-    )
-
-
-normalized_columns = {
-    normalize_column(c): c
-    for c in df.columns
-}
-
-
-def find_column(possible_names):
-
-    for name in possible_names:
-
-        normalized_name = normalize_column(name)
-
-        if normalized_name in normalized_columns:
-
-            return normalized_columns[normalized_name]
-
-    return None
-
-
-# ------------------------------------------------------------
-# Demographics
-# ------------------------------------------------------------
-
-patient_col = find_column([
+patient_col = find_col([
     "inpatient_number",
     "patient_id",
-    "patient_number",
-    "id"
+    "patientid",
+    "inpatient",
 ])
 
-age_col = find_column([
-    "age",
-    "age_years"
-])
-
-gender_col = find_column([
+gender_col = find_col([
     "gender",
-    "sex"
+    "sex",
 ])
 
-weight_col = find_column([
-    "weight",
-    "body_weight"
-])
-
-height_col = find_column([
-    "height",
-    "body_height"
-])
-
-bmi_col = find_column([
-    "bmi",
-    "BMI"
-])
-
-occupation_col = find_column([
-    "occupation"
-])
-
-agecat_col = find_column([
+age_col = find_col([
+    "age",
+    "age_years",
     "agecat",
-    "age_category"
+    "age_category",
 ])
 
+weight_col = find_col([
+    "weight",
+    "weight_kg",
+])
 
-# ------------------------------------------------------------
-# Cardiac
-# ------------------------------------------------------------
+height_col = find_col([
+    "height",
+    "height_cm",
+])
 
-nyha_col = find_column([
-    "nyha_cardiac",
+bmi_col = find_col([
+    "bmi",
+    "body_mass_index",
+])
+
+occupation_col = find_col([
+    "occupation",
+])
+
+nyha_col = find_col([
+    "nyha_class",
     "nyha",
-    "nyha_class"
+    "nyha_grade",
 ])
 
-killip_col = find_column([
+killip_col = find_col([
     "killip_grade",
     "killip",
-    "killip_class"
+    "killip_class",
 ])
 
-
-# ------------------------------------------------------------
-# Biomarkers
-# ------------------------------------------------------------
-
-crp_col = find_column([
+crp_col = find_col([
     "hs_crp",
     "hs-crp",
-    "hsCRP",
-    "crp"
+    "hscrp",
+    "crp",
 ])
 
-wbc_col = find_column([
+wbc_col = find_col([
     "wbc",
-    "WBC"
+    "white_blood_cell",
+    "white_blood_cells",
 ])
 
-nlr_col = find_column([
+nlr_col = find_col([
     "nlr",
-    "NLR"
+    "neutrophil_lymphocyte_ratio",
 ])
 
-albumin_col = find_column([
+albumin_col = find_col([
     "albumin",
-    "Albumin"
+    "serum_albumin",
 ])
 
+responsiveness_col = find_col([
+    "responsiveness",
+    "response",
+    "responsive",
+])
 
-# ------------------------------------------------------------
-# Mortality
-# ------------------------------------------------------------
-
-mortality_col = find_column([
+in_hospital_col = find_col([
+    "in_hospital_mortality",
     "in_hospital_mortality",
     "hospital_mortality",
+    "inpatient_mortality",
+    "mortality_in_hospital",
     "in_hospital_death",
-    "mortality",
-    "death"
 ])
 
-mortality28_col = find_column([
+mortality_28d_col = find_col([
     "mortality_28d",
-    "mortality_28_day",
     "28_day_mortality",
-    "mortality_28dincrease_28d",
-    "increase_28d"
+    "28_days_mortality",
+    "mortality_28_d",
+    "28d_mortality",
+    "mortality_28days",
+    "28_day_death",
 ])
+
+# Fallback detection for messy names
+if in_hospital_col is None:
+    for c in df.columns:
+        n = normalize_name(c)
+        if "hospital" in n and "mortality" in n:
+            in_hospital_col = c
+            break
+
+if mortality_28d_col is None:
+    for c in df.columns:
+        n = normalize_name(c)
+        if ("28" in n or "28day" in n or "28d" in n) and (
+            "mortality" in n or "death" in n
+        ):
+            mortality_28d_col = c
+            break
+
+
+# ============================================================
+# DATA PREPARATION
+# ============================================================
+
+def numeric_series(col):
+    if col is None:
+        return pd.Series(dtype=float)
+
+    return pd.to_numeric(df[col], errors="coerce")
+
+
+def to_binary(series):
+    """
+    Converts common mortality/response formats to 0/1.
+    """
+    numeric = pd.to_numeric(series, errors="coerce")
+
+    # Numeric 0/1
+    result = numeric.copy()
+
+    text = series.astype(str).str.strip().str.lower()
+
+    positive = {
+        "1",
+        "yes",
+        "y",
+        "true",
+        "dead",
+        "death",
+        "died",
+        "mortality",
+        "positive",
+        "event",
+    }
+
+    negative = {
+        "0",
+        "no",
+        "n",
+        "false",
+        "alive",
+        "survived",
+        "survival",
+        "negative",
+        "nonevent",
+        "non-event",
+    }
+
+    result[text.isin(positive)] = 1
+    result[text.isin(negative)] = 0
+
+    return result
+
+
+# Create clean mortality variables without modifying the original columns
+if in_hospital_col:
+    df["_in_hospital_target"] = to_binary(df[in_hospital_col])
+else:
+    df["_in_hospital_target"] = np.nan
+
+if mortality_28d_col:
+    df["_28d_target"] = to_binary(df[mortality_28d_col])
+else:
+    df["_28d_target"] = np.nan
+
+
+# ============================================================
+# SIDEBAR
+# ============================================================
+
+st.sidebar.markdown(
+    """
+    <div style="text-align:center; padding:12px;">
+        <div style="font-size:48px;">❤️</div>
+        <h2>HeartCare AI</h2>
+        <p>Clinical Analytics Dashboard</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+pages = [
+    "🏥 Overview",
+    "🧹 Data Quality",
+    "👤 Patient Profile",
+    "❤️ Cardiac Risk",
+    "🧪 Biomarkers",
+    "⚠️ Mortality Analysis",
+    "🤖 AI Prediction",
+    "📈 Model Performance",
+    "💡 Decision Support",
+]
+
+page = st.sidebar.radio("NAVIGATION", pages)
+
+st.sidebar.markdown("---")
+
+st.sidebar.caption(
+    "For research and analytical use. "
+    "Predictions should not replace clinician judgment."
+)
+
+# ============================================================
+# FILTERS
+# ============================================================
+
+st.sidebar.markdown("### 🔎 Filters")
+
+filtered_df = df.copy()
+
+if gender_col:
+    values = (
+        filtered_df[gender_col]
+        .dropna()
+        .astype(str)
+        .sort_values()
+        .unique()
+        .tolist()
+    )
+
+    selected_gender = st.sidebar.multiselect(
+        "Gender",
+        values,
+        default=values,
+    )
+
+    if selected_gender:
+        filtered_df = filtered_df[
+            filtered_df[gender_col].astype(str).isin(selected_gender)
+        ]
+
+if nyha_col:
+    nyha_values = pd.to_numeric(
+        filtered_df[nyha_col], errors="coerce"
+    ).dropna()
+
+    if not nyha_values.empty:
+        min_nyha = int(nyha_values.min())
+        max_nyha = int(nyha_values.max())
+
+        if min_nyha < max_nyha:
+            selected_nyha = st.sidebar.slider(
+                "NYHA range",
+                min_nyha,
+                max_nyha,
+                (min_nyha, max_nyha),
+            )
+
+            nyha_numeric = pd.to_numeric(
+                filtered_df[nyha_col],
+                errors="coerce",
+            )
+
+            filtered_df = filtered_df[
+                nyha_numeric.between(
+                    selected_nyha[0],
+                    selected_nyha[1],
+                    inclusive="both",
+                )
+            ]
 
 
 # ============================================================
@@ -379,1450 +484,736 @@ mortality28_col = find_column([
 # ============================================================
 
 def metric_card(icon, title, value):
-
     st.markdown(
         f"""
         <div class="metric-card">
-
-            <div class="metric-icon">
-                {icon}
-            </div>
-
-            <div class="metric-title">
-                {title}
-            </div>
-
-            <div class="metric-value">
-                {value}
-            </div>
-
+            <div style="font-size:26px;">{icon}</div>
+            <div class="metric-title">{title}</div>
+            <div class="metric-value">{value}</div>
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 
-def numeric_series(column):
-
-    if column is None:
-        return pd.Series(dtype=float)
-
-    return pd.to_numeric(
-        df[column],
-        errors="coerce"
-    )
-
-
-def binary_target(series):
-
-    if series is None:
-        return None
-
-    s = series.copy()
-
-    # Numeric first
-    numeric = pd.to_numeric(
-        s,
-        errors="coerce"
-    )
-
-    if numeric.notna().sum() > 0:
-
-        unique_values = set(
-            numeric.dropna().unique()
-        )
-
-        if unique_values.issubset({0, 1}):
-
-            return numeric.astype("Int64")
-
-    # Text values
-    text = (
-        s.astype(str)
-        .str.lower()
-        .str.strip()
-    )
-
-    mapping = {
-        "yes": 1,
-        "no": 0,
-        "dead": 1,
-        "alive": 0,
-        "death": 1,
-        "survival": 0,
-        "died": 1,
-        "survived": 0,
-        "true": 1,
-        "false": 0
-    }
-
-    return text.map(mapping).astype("Int64")
-
-
-def mortality_rate(column, data=None):
-
-    if column is None:
+def mortality_rate(data, target_col):
+    if target_col not in data.columns:
         return np.nan
 
-    if data is None:
-        data = df
+    s = pd.to_numeric(data[target_col], errors="coerce").dropna()
 
-    values = binary_target(
-        data[column]
-    )
-
-    if values is None:
+    if len(s) == 0:
         return np.nan
 
-    return values.astype(float).mean() * 100
+    return s.mean() * 100
 
 
-def display_rate(value):
+def show_group_mortality(data, group_col, target_col, title):
+    if group_col is None:
+        st.info(f"{title}: required column was not detected.")
+        return
 
-    if pd.isna(value):
-        return "N/A"
+    if target_col not in data.columns:
+        st.info(f"{title}: mortality outcome was not detected.")
+        return
 
-    return f"{value:.1f}%"
-
-
-def safe_mean(column):
-
-    if column is None:
-        return np.nan
-
-    return pd.to_numeric(
-        df[column],
-        errors="coerce"
-    ).mean()
-
-
-def group_mortality(data, group_col, target_col):
-
-    if group_col is None or target_col is None:
-        return pd.DataFrame()
-
-    temp = data[
-        [group_col, target_col]
-    ].copy()
-
-    temp["target_binary"] = binary_target(
-        temp[target_col]
-    )
-
-    temp = temp.dropna(
-        subset=[group_col, "target_binary"]
-    )
+    temp = data[[group_col, target_col]].copy()
+    temp[target_col] = pd.to_numeric(temp[target_col], errors="coerce")
+    temp = temp.dropna()
 
     if temp.empty:
-        return pd.DataFrame()
+        st.info(f"No usable data available for {title}.")
+        return
 
-    result = (
-        temp
-        .groupby(group_col)["target_binary"]
-        .agg(
-            Patients="count",
-            Mortality_Rate="mean"
-        )
+    summary = (
+        temp.groupby(group_col)[target_col]
+        .agg(["count", "mean"])
         .reset_index()
     )
 
-    result["Mortality_Rate"] *= 100
+    summary["Mortality %"] = summary["mean"] * 100
 
-    return result
-
-
-# ============================================================
-# SIDEBAR NAVIGATION
-# ============================================================
-
-with st.sidebar:
-
-    st.markdown(
-        """
-        <div style="
-        text-align:center;
-        padding:15px;
-        ">
-
-        <div style="font-size:50px;">
-        ❤️
-        </div>
-
-        <h2>
-        HeartCare AI
-        </h2>
-
-        <p>
-        Clinical Analytics & Prediction
-        </p>
-
-        </div>
-        """,
-        unsafe_allow_html=True
+    fig = px.bar(
+        summary,
+        x=group_col,
+        y="Mortality %",
+        text="Mortality %",
+        title=title,
     )
 
-    st.divider()
-
-    page = st.radio(
-        "NAVIGATION",
-        [
-            "🏥 Overview",
-            "📊 Data Quality",
-            "👤 Patient Profile",
-            "❤️ Cardiac Risk",
-            "🧪 Biomarkers & Nutrition",
-            "⚠️ Mortality Analysis",
-            "🔎 Relationship Explorer",
-            "🤖 AI Prediction",
-            "📈 Model Performance",
-            "💡 Data-Driven Insights",
-            "📋 Research Questions"
-        ]
+    fig.update_traces(
+        texttemplate="%{text:.1f}%",
+        textposition="outside",
     )
 
-    st.divider()
+    st.plotly_chart(fig, use_container_width=True)
 
-    st.caption(
-        "Heart Failure Clinical Analytics"
-    )
+    display = summary[[group_col, "count", "Mortality %"]].copy()
+    display.columns = [str(x) for x in display.columns]
 
-    st.caption(
-        "For research and analytical use."
+    st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True,
     )
 
 
 # ============================================================
-# 1. OVERVIEW
+# OVERVIEW
 # ============================================================
 
 if page == "🏥 Overview":
 
-    st.markdown(
-        '<div class="main-title">Hospital Overview</div>',
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        '<div class="subtitle">Patient population and overall clinical outcomes</div>',
-        unsafe_allow_html=True
-    )
+    st.header("🏥 Hospital Overview")
+    st.subheader("Descriptive clinical analytics")
 
     total_patients = (
-        df[patient_col].nunique()
+        filtered_df[patient_col].nunique()
         if patient_col
-        else len(df)
+        else len(filtered_df)
     )
 
-    hospital_mortality = mortality_rate(
-        mortality_col
+    ih_rate = mortality_rate(filtered_df, "_in_hospital_target")
+    d28_rate = mortality_rate(filtered_df, "_28d_target")
+
+    avg_age = (
+        numeric_series(age_col).mean()
+        if age_col
+        else np.nan
     )
 
-    mortality_28d = mortality_rate(
-        mortality28_col
+    avg_bmi = (
+        numeric_series(bmi_col).mean()
+        if bmi_col
+        else np.nan
     )
-
-    avg_age = safe_mean(age_col)
-    avg_bmi = safe_mean(bmi_col)
 
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
-        metric_card(
-            "👥",
-            "Total Patients",
-            f"{total_patients:,}"
-        )
+        metric_card("👥", "Total Patients", f"{total_patients:,}")
 
     with c2:
         metric_card(
-            "⚠️",
+            "🏥",
             "In-Hospital Mortality",
-            display_rate(hospital_mortality)
+            f"{ih_rate:.1f}%" if pd.notna(ih_rate) else "N/A",
         )
 
     with c3:
         metric_card(
             "📅",
             "28-Day Mortality",
-            display_rate(mortality_28d)
+            f"{d28_rate:.1f}%" if pd.notna(d28_rate) else "N/A",
         )
 
     with c4:
         metric_card(
             "🎂",
             "Average Age",
-            f"{avg_age:.1f}"
-            if not pd.isna(avg_age)
-            else "N/A"
+            f"{avg_age:.1f}" if pd.notna(avg_age) else "N/A",
         )
 
-    st.write("")
-
-    c5, c6, c7, c8 = st.columns(4)
-
-    with c5:
-        metric_card(
-            "⚖️",
-            "Average BMI",
-            f"{avg_bmi:.1f}"
-            if not pd.isna(avg_bmi)
-            else "N/A"
-        )
-
-    with c6:
-        metric_card(
-            "❤️",
-            "NYHA Available",
-            "Yes" if nyha_col else "No"
-        )
-
-    with c7:
-        metric_card(
-            "🚨",
-            "Killip Available",
-            "Yes" if killip_col else "No"
-        )
-
-    with c8:
-        metric_card(
-            "🧪",
-            "Biomarkers Available",
-            "Yes"
-            if any([
-                crp_col,
-                wbc_col,
-                nlr_col,
-                albumin_col
-            ])
-            else "No"
-        )
-
-    st.write("")
+    st.markdown("###")
 
     st.markdown(
         """
-        <div class="info-box">
-
+        <div class="research-note">
         <b>Clinical analytics objective</b><br><br>
-
-        This dashboard evaluates demographic, cardiac,
-        inflammatory, nutritional and clinical characteristics
-        in relation to mortality outcomes.
-
-        It provides descriptive analysis, mortality association
-        analysis, an experimental Artificial Neural Network
-        prediction interface, model performance evaluation,
-        and data-driven analytical flags.
-
+        This dashboard evaluates demographic, cardiac, inflammatory,
+        nutritional and responsiveness characteristics in relation to
+        in-hospital and 28-day mortality outcomes. It also provides an
+        experimental machine-learning prediction interface.
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
-    st.subheader("Outcome Overview")
+    st.markdown("### 📊 Patient Characteristics")
 
-    outcome_data = []
+    col1, col2 = st.columns(2)
 
-    if mortality_col:
+    with col1:
+        if gender_col:
+            gender_counts = (
+                filtered_df[gender_col]
+                .astype(str)
+                .value_counts()
+                .reset_index()
+            )
 
-        rate = mortality_rate(mortality_col)
+            gender_counts.columns = ["Gender", "Patients"]
 
-        outcome_data.append({
-            "Outcome": "In-Hospital Mortality",
-            "Rate": rate
-        })
+            fig = px.pie(
+                gender_counts,
+                names="Gender",
+                values="Patients",
+                hole=0.45,
+                title="Patient Distribution by Gender",
+            )
 
-    if mortality28_col:
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Gender column not detected.")
 
-        rate = mortality_rate(mortality28_col)
+    with col2:
+        if age_col:
+            age_data = numeric_series(age_col).dropna()
 
-        outcome_data.append({
-            "Outcome": "28-Day Mortality",
-            "Rate": rate
-        })
+            if not age_data.empty:
+                fig = px.histogram(
+                    age_data,
+                    x=age_data,
+                    nbins=20,
+                    title="Age Distribution",
+                )
 
-    if outcome_data:
-
-        outcome_df = pd.DataFrame(
-            outcome_data
-        )
-
-        fig = px.bar(
-            outcome_df,
-            x="Outcome",
-            y="Rate",
-            text="Rate",
-            title="Mortality Outcomes"
-        )
-
-        fig.update_traces(
-            texttemplate="%{text:.1f}%",
-            textposition="outside"
-        )
-
-        fig.update_yaxes(
-            title="Mortality (%)"
-        )
-
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True,
+                )
+            else:
+                st.info("Age data unavailable.")
+        else:
+            st.info("Age column not detected.")
 
 
 # ============================================================
-# 2. DATA QUALITY
+# DATA QUALITY
 # ============================================================
 
-elif page == "📊 Data Quality":
+if page == "🧹 Data Quality":
 
-    st.markdown(
-        '<div class="main-title">Data Quality & Structure</div>',
-        unsafe_allow_html=True
-    )
+    st.header("🧹 Data Quality & Dataset Review")
 
-    st.markdown(
-        '<div class="subtitle">Dataset completeness, duplicates and variable structure</div>',
-        unsafe_allow_html=True
-    )
-
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3 = st.columns(3)
 
     with c1:
-        st.metric(
-            "Rows",
-            f"{len(df):,}"
-        )
+        metric_card("📋", "Rows", f"{len(df):,}")
 
     with c2:
-        st.metric(
-            "Columns",
-            f"{df.shape[1]:,}"
-        )
+        metric_card("🧬", "Columns", f"{df.shape[1]:,}")
 
     with c3:
-        st.metric(
+        metric_card(
+            "♻️",
             "Duplicate Rows",
-            f"{df.duplicated().sum():,}"
+            f"{df.duplicated().sum():,}",
         )
 
-    with c4:
-
-        missing_pct = (
-            df.isna().mean().mean() * 100
-        )
-
-        st.metric(
-            "Missing Cells",
-            f"{missing_pct:.1f}%"
-        )
-
-    st.subheader("Column Inventory")
-
-    column_info = pd.DataFrame({
-        "Column": df.columns,
-        "Data Type": [
-            str(df[c].dtype)
-            for c in df.columns
-        ],
-        "Missing": [
-            int(df[c].isna().sum())
-            for c in df.columns
-        ],
-        "Missing %": [
-            round(
-                df[c].isna().mean() * 100,
-                1
-            )
-            for c in df.columns
-        ],
-        "Unique Values": [
-            df[c].nunique(dropna=True)
-            for c in df.columns
-        ]
-    })
-
-    st.dataframe(
-        column_info,
-        use_container_width=True,
-        hide_index=True
-    )
-
-    st.subheader("Missing Values")
+    st.markdown("### Missing Values")
 
     missing = (
         df.isna()
         .sum()
-        .sort_values(
-            ascending=False
-        )
+        .reset_index()
     )
 
-    missing = missing[
-        missing > 0
-    ]
+    missing.columns = ["Column", "Missing"]
 
-    if len(missing) > 0:
+    missing["Missing %"] = (
+        missing["Missing"] / len(df) * 100
+    ).round(2)
 
-        missing_df = (
-            missing
-            .reset_index()
-        )
+    missing = missing.sort_values(
+        "Missing %",
+        ascending=False,
+    )
 
-        missing_df.columns = [
-            "Column",
-            "Missing Values"
-        ]
+    st.dataframe(
+        missing,
+        use_container_width=True,
+        hide_index=True,
+    )
 
-        fig = px.bar(
-            missing_df.head(20),
-            x="Missing Values",
-            y="Column",
-            orientation="h",
-            title="Top Missing Variables"
-        )
+    st.markdown("### Dataset Preview")
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
+    st.dataframe(
+        df.head(20),
+        use_container_width=True,
+        hide_index=True,
+    )
 
-    else:
+    st.markdown("### Detected Clinical Variables")
 
-        st.success(
-            "No missing values detected."
-        )
+    detected = {
+        "Patient ID": patient_col,
+        "Gender": gender_col,
+        "Age": age_col,
+        "Weight": weight_col,
+        "Height": height_col,
+        "BMI": bmi_col,
+        "Occupation": occupation_col,
+        "NYHA": nyha_col,
+        "Killip": killip_col,
+        "hs-CRP": crp_col,
+        "WBC": wbc_col,
+        "NLR": nlr_col,
+        "Albumin": albumin_col,
+        "Responsiveness": responsiveness_col,
+        "In-Hospital Mortality": in_hospital_col,
+        "28-Day Mortality": mortality_28d_col,
+    }
+
+    detected_df = pd.DataFrame(
+        list(detected.items()),
+        columns=["Variable", "Detected Column"],
+    )
+
+    st.dataframe(
+        detected_df,
+        use_container_width=True,
+        hide_index=True,
+    )
 
 
 # ============================================================
-# 3. PATIENT PROFILE
+# PATIENT PROFILE
 # ============================================================
 
-elif page == "👤 Patient Profile":
+if page == "👤 Patient Profile":
 
-    st.markdown(
-        '<div class="main-title">Patient Profile</div>',
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        '<div class="subtitle">Individual demographic, cardiac, laboratory and outcome profile</div>',
-        unsafe_allow_html=True
-    )
+    st.header("👤 Patient Profile")
 
     if patient_col is None:
-
-        st.warning(
-            "Patient identifier column was not detected."
-        )
-
+        st.warning("Patient identifier column was not detected.")
     else:
 
-        patient_values = (
-            df[patient_col]
+        patients = (
+            filtered_df[patient_col]
             .dropna()
             .unique()
+            .tolist()
         )
 
-        patient = st.selectbox(
-            "Select Patient",
-            patient_values
-        )
+        if len(patients) == 0:
+            st.info("No patients available after filtering.")
+        else:
 
-        patient_df = df[
-            df[patient_col] == patient
-        ]
-
-        st.subheader("Demographics")
-
-        demographic_data = {}
-
-        for label, col in [
-            ("Age", age_col),
-            ("Gender", gender_col),
-            ("Weight", weight_col),
-            ("Height", height_col),
-            ("BMI", bmi_col),
-            ("Occupation", occupation_col),
-            ("Age Category", agecat_col)
-        ]:
-
-            if col:
-
-                value = patient_df[col].iloc[0]
-
-                demographic_data[label] = value
-
-        if demographic_data:
-
-            cols = st.columns(
-                min(4, len(demographic_data))
+            selected_patient = st.selectbox(
+                "Select Patient",
+                patients,
             )
 
-            for i, (label, value) in enumerate(
-                demographic_data.items()
-            ):
+            patient_data = filtered_df[
+                filtered_df[patient_col] == selected_patient
+            ].copy()
 
-                cols[
-                    i % len(cols)
-                ].metric(
-                    label,
-                    str(value)
-                )
+            st.markdown("### Patient Summary")
 
-        st.subheader("Cardiac Profile")
+            cols = st.columns(4)
 
-        cardiac_data = {}
-
-        for label, col in [
-            ("NYHA", nyha_col),
-            ("Killip", killip_col)
-        ]:
-
-            if col:
-
-                cardiac_data[label] = (
-                    patient_df[col].iloc[0]
-                )
-
-        if cardiac_data:
-
-            cols = st.columns(
-                len(cardiac_data)
+            patient_age = (
+                pd.to_numeric(
+                    patient_data[age_col],
+                    errors="coerce",
+                ).iloc[0]
+                if age_col and age_col in patient_data
+                else np.nan
             )
 
-            for i, (label, value) in enumerate(
-                cardiac_data.items()
-            ):
-
-                cols[i].metric(
-                    label,
-                    str(value)
-                )
-
-        st.subheader("Laboratory Profile")
-
-        lab_data = {}
-
-        for label, col in [
-            ("hs-CRP", crp_col),
-            ("WBC", wbc_col),
-            ("NLR", nlr_col),
-            ("Albumin", albumin_col)
-        ]:
-
-            if col:
-
-                lab_data[label] = (
-                    patient_df[col].iloc[0]
-                )
-
-        if lab_data:
-
-            cols = st.columns(
-                min(4, len(lab_data))
+            patient_bmi = (
+                pd.to_numeric(
+                    patient_data[bmi_col],
+                    errors="coerce",
+                ).iloc[0]
+                if bmi_col and bmi_col in patient_data
+                else np.nan
             )
 
-            for i, (label, value) in enumerate(
-                lab_data.items()
-            ):
+            patient_nyha = (
+                patient_data[nyha_col].iloc[0]
+                if nyha_col
+                else "N/A"
+            )
 
-                cols[
-                    i % len(cols)
-                ].metric(
-                    label,
-                    str(value)
+            patient_killip = (
+                patient_data[killip_col].iloc[0]
+                if killip_col
+                else "N/A"
+            )
+
+            with cols[0]:
+                metric_card(
+                    "👤",
+                    "Patient ID",
+                    str(selected_patient),
                 )
 
-        st.subheader("Mortality Outcomes")
+            with cols[1]:
+                metric_card(
+                    "🎂",
+                    "Age",
+                    f"{patient_age:.1f}"
+                    if pd.notna(patient_age)
+                    else "N/A",
+                )
 
-        outcome_data = {}
+            with cols[2]:
+                metric_card(
+                    "⚖️",
+                    "BMI",
+                    f"{patient_bmi:.1f}"
+                    if pd.notna(patient_bmi)
+                    else "N/A",
+                )
 
-        if mortality_col:
+            with cols[3]:
+                metric_card(
+                    "❤️",
+                    "NYHA",
+                    str(patient_nyha),
+                )
 
-            outcome_data[
-                "In-Hospital Mortality"
-            ] = patient_df[
-                mortality_col
-            ].iloc[0]
+            st.markdown("### Clinical Characteristics")
 
-        if mortality28_col:
+            profile = {}
 
-            outcome_data[
-                "28-Day Mortality"
-            ] = patient_df[
-                mortality28_col
-            ].iloc[0]
+            for label, col in [
+                ("Gender", gender_col),
+                ("Weight", weight_col),
+                ("Height", height_col),
+                ("BMI", bmi_col),
+                ("Occupation", occupation_col),
+                ("NYHA", nyha_col),
+                ("Killip", killip_col),
+                ("hs-CRP", crp_col),
+                ("WBC", wbc_col),
+                ("NLR", nlr_col),
+                ("Albumin", albumin_col),
+                ("Responsiveness", responsiveness_col),
+            ]:
+                if col:
+                    profile[label] = patient_data[col].iloc[0]
 
-        if outcome_data:
+            profile_df = pd.DataFrame(
+                list(profile.items()),
+                columns=["Variable", "Value"],
+            )
 
             st.dataframe(
-                pd.DataFrame(
-                    [
-                        outcome_data
-                    ]
-                ),
+                profile_df,
                 use_container_width=True,
-                hide_index=True
+                hide_index=True,
             )
 
 
 # ============================================================
-# 4. CARDIAC RISK
+# CARDIAC RISK
 # ============================================================
 
-elif page == "❤️ Cardiac Risk":
+if page == "❤️ Cardiac Risk":
+
+    st.header("❤️ Cardiac Severity & Risk")
 
     st.markdown(
-        '<div class="main-title">Cardiac Severity & Risk Analysis</div>',
-        unsafe_allow_html=True
+        """
+        This section examines whether established cardiac severity
+        indicators are associated with mortality outcomes.
+        """
     )
 
-    st.markdown(
-        '<div class="subtitle">NYHA, Killip and combined cardiac severity analysis</div>',
-        unsafe_allow_html=True
-    )
+    col1, col2 = st.columns(2)
 
-    outcome_options = {}
-
-    if mortality_col:
-        outcome_options[
-            "In-Hospital Mortality"
-        ] = mortality_col
-
-    if mortality28_col:
-        outcome_options[
-            "28-Day Mortality"
-        ] = mortality28_col
-
-    if not outcome_options:
-
-        st.error(
-            "No mortality outcome column detected."
+    with col1:
+        show_group_mortality(
+            filtered_df,
+            nyha_col,
+            "_in_hospital_target",
+            "In-Hospital Mortality by NYHA",
         )
-        st.stop()
 
-    selected_outcome = st.selectbox(
-        "Select Outcome",
-        list(outcome_options.keys())
-    )
+    with col2:
+        show_group_mortality(
+            filtered_df,
+            killip_col,
+            "_in_hospital_target",
+            "In-Hospital Mortality by Killip Grade",
+        )
 
-    target_col = outcome_options[
-        selected_outcome
+    st.markdown("### 28-Day Mortality")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        show_group_mortality(
+            filtered_df,
+            nyha_col,
+            "_28d_target",
+            "28-Day Mortality by NYHA",
+        )
+
+    with col2:
+        show_group_mortality(
+            filtered_df,
+            killip_col,
+            "_28d_target",
+            "28-Day Mortality by Killip Grade",
+        )
+
+
+# ============================================================
+# BIOMARKERS
+# ============================================================
+
+if page == "🧪 Biomarkers":
+
+    st.header("🧪 Inflammatory & Nutritional Biomarkers")
+
+    biomarker_cols = [
+        ("hs-CRP", crp_col),
+        ("WBC", wbc_col),
+        ("NLR", nlr_col),
+        ("Albumin", albumin_col),
     ]
+
+    available_biomarkers = [
+        (name, col)
+        for name, col in biomarker_cols
+        if col is not None
+    ]
+
+    if not available_biomarkers:
+        st.warning("No biomarker columns were detected.")
+    else:
+
+        for name, col in available_biomarkers:
+
+            st.markdown(f"### {name}")
+
+            temp = pd.DataFrame(
+                {
+                    "Value": pd.to_numeric(
+                        filtered_df[col],
+                        errors="coerce",
+                    )
+                }
+            ).dropna()
+
+            if temp.empty:
+                st.info(f"No usable data for {name}.")
+                continue
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                fig = px.histogram(
+                    temp,
+                    x="Value",
+                    nbins=30,
+                    title=f"{name} Distribution",
+                )
+
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True,
+                )
+
+            with col2:
+
+                if "_in_hospital_target" in filtered_df:
+
+                    temp2 = filtered_df[
+                        [col, "_in_hospital_target"]
+                    ].copy()
+
+                    temp2[col] = pd.to_numeric(
+                        temp2[col],
+                        errors="coerce",
+                    )
+
+                    temp2["_in_hospital_target"] = pd.to_numeric(
+                        temp2["_in_hospital_target"],
+                        errors="coerce",
+                    )
+
+                    temp2 = temp2.dropna()
+
+                    if len(temp2) > 0:
+                        fig = px.box(
+                            temp2,
+                            x="_in_hospital_target",
+                            y=col,
+                            title=f"{name} by In-Hospital Outcome",
+                            labels={
+                                "_in_hospital_target": "Mortality (0=Survival, 1=Death)"
+                            },
+                        )
+
+                        st.plotly_chart(
+                            fig,
+                            use_container_width=True,
+                        )
+
+
+    st.markdown("### 🔥 Inflammation + Albumin")
+
+    if crp_col and albumin_col:
+
+        combo = filtered_df[
+            [crp_col, albumin_col, "_in_hospital_target"]
+        ].copy()
+
+        combo[crp_col] = pd.to_numeric(
+            combo[crp_col],
+            errors="coerce",
+        )
+
+        combo[albumin_col] = pd.to_numeric(
+            combo[albumin_col],
+            errors="coerce",
+        )
+
+        combo["_in_hospital_target"] = pd.to_numeric(
+            combo["_in_hospital_target"],
+            errors="coerce",
+        )
+
+        combo = combo.dropna()
+
+        if len(combo) > 0:
+
+            fig = px.scatter(
+                combo,
+                x=crp_col,
+                y=albumin_col,
+                color="_in_hospital_target",
+                title="hs-CRP vs Albumin by In-Hospital Outcome",
+                labels={
+                    "_in_hospital_target": "Mortality"
+                },
+            )
+
+            st.plotly_chart(
+                fig,
+                use_container_width=True,
+            )
+
+
+# ============================================================
+# MORTALITY ANALYSIS
+# ============================================================
+
+if page == "⚠️ Mortality Analysis":
+
+    st.header("⚠️ Mortality Analysis")
+
+    st.markdown(
+        """
+        Descriptive analysis of factors associated with in-hospital
+        and 28-day mortality.
+        """
+    )
 
     col1, col2 = st.columns(2)
 
     with col1:
 
-        if nyha_col:
+        ih_rate = mortality_rate(
+            filtered_df,
+            "_in_hospital_target",
+        )
 
-            nyha_data = group_mortality(
-                df,
-                nyha_col,
-                target_col
-            )
-
-            if not nyha_data.empty:
-
-                fig = px.bar(
-                    nyha_data,
-                    x=nyha_col,
-                    y="Mortality_Rate",
-                    text="Mortality_Rate",
-                    title="Mortality by NYHA"
-                )
-
-                fig.update_traces(
-                    texttemplate="%{text:.1f}%",
-                    textposition="outside"
-                )
-
-                st.plotly_chart(
-                    fig,
-                    use_container_width=True
-                )
-
-                st.dataframe(
-                    nyha_data,
-                    use_container_width=True,
-                    hide_index=True
-                )
+        metric_card(
+            "🏥",
+            "In-Hospital Mortality",
+            f"{ih_rate:.2f}%"
+            if pd.notna(ih_rate)
+            else "N/A",
+        )
 
     with col2:
 
-        if killip_col:
-
-            killip_data = group_mortality(
-                df,
-                killip_col,
-                target_col
-            )
-
-            if not killip_data.empty:
-
-                fig = px.bar(
-                    killip_data,
-                    x=killip_col,
-                    y="Mortality_Rate",
-                    text="Mortality_Rate",
-                    title="Mortality by Killip Grade"
-                )
-
-                fig.update_traces(
-                    texttemplate="%{text:.1f}%",
-                    textposition="outside"
-                )
-
-                st.plotly_chart(
-                    fig,
-                    use_container_width=True
-                )
-
-                st.dataframe(
-                    killip_data,
-                    use_container_width=True,
-                    hide_index=True
-                )
-
-    # --------------------------------------------------------
-    # NYHA x Killip
-    # --------------------------------------------------------
-
-    if nyha_col and killip_col:
-
-        st.subheader(
-            "NYHA × Killip Mortality Heatmap"
+        d28_rate = mortality_rate(
+            filtered_df,
+            "_28d_target",
         )
 
-        temp = df[
-            [
-                nyha_col,
-                killip_col,
-                target_col
-            ]
-        ].copy()
-
-        temp["target_binary"] = binary_target(
-            temp[target_col]
+        metric_card(
+            "📅",
+            "28-Day Mortality",
+            f"{d28_rate:.2f}%"
+            if pd.notna(d28_rate)
+            else "N/A",
         )
 
-        temp = temp.dropna(
-            subset=[
-                nyha_col,
-                killip_col,
-                "target_binary"
-            ]
+    st.markdown("### Demographic Factors")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        show_group_mortality(
+            filtered_df,
+            gender_col,
+            "_in_hospital_target",
+            "In-Hospital Mortality by Gender",
         )
 
-        if not temp.empty:
+    with col2:
+        show_group_mortality(
+            filtered_df,
+            age_col,
+            "_in_hospital_target",
+            "In-Hospital Mortality by Age",
+        )
 
-            pivot = pd.pivot_table(
-                temp,
-                values="target_binary",
-                index=nyha_col,
-                columns=killip_col,
-                aggfunc="mean"
-            ) * 100
+    st.markdown("### Clinical Factors")
 
-            fig = px.imshow(
-                pivot,
-                text_auto=".1f",
-                aspect="auto",
-                title="Mortality Rate (%) by NYHA and Killip"
-            )
+    col1, col2 = st.columns(2)
 
-            st.plotly_chart(
-                fig,
-                use_container_width=True
-            )
+    with col1:
+        show_group_mortality(
+            filtered_df,
+            nyha_col,
+            "_in_hospital_target",
+            "Mortality by NYHA",
+        )
+
+    with col2:
+        show_group_mortality(
+            filtered_df,
+            killip_col,
+            "_in_hospital_target",
+            "Mortality by Killip",
+        )
 
 
 # ============================================================
-# 5. BIOMARKERS & NUTRITION
+# AI PREDICTION
 # ============================================================
 
-elif page == "🧪 Biomarkers & Nutrition":
+if page == "🤖 AI Prediction":
+
+    st.header("🤖 AI Mortality Prediction")
 
     st.markdown(
-        '<div class="main-title">Biomarkers & Nutritional Analysis</div>',
-        unsafe_allow_html=True
+        """
+        The model uses available demographic, cardiac, inflammatory
+        and nutritional variables to estimate mortality risk.
+        """
     )
 
-    st.markdown(
-        '<div class="subtitle">Inflammation, nutritional status and mortality patterns</div>',
-        unsafe_allow_html=True
-    )
+    target_options = {}
 
-    outcome_options = {}
+    if in_hospital_col:
+        target_options["In-Hospital Mortality"] = "_in_hospital_target"
 
-    if mortality_col:
-        outcome_options[
-            "In-Hospital Mortality"
-        ] = mortality_col
+    if mortality_28d_col:
+        target_options["28-Day Mortality"] = "_28d_target"
 
-    if mortality28_col:
-        outcome_options[
-            "28-Day Mortality"
-        ] = mortality28_col
-
-    if not outcome_options:
-
+    if not target_options:
         st.error(
-            "No mortality outcome detected."
+            "No mortality outcome was detected in the dataset."
         )
         st.stop()
 
-    selected_outcome = st.selectbox(
-        "Outcome",
-        list(outcome_options.keys())
+    selected_target_label = st.selectbox(
+        "Select prediction outcome",
+        list(target_options.keys()),
     )
 
-    target_col = outcome_options[
-        selected_outcome
-    ]
+    selected_target = target_options[selected_target_label]
 
-    biomarker_columns = [
-        ("hs-CRP", crp_col),
-        ("WBC", wbc_col),
-        ("NLR", nlr_col),
-        ("Albumin", albumin_col)
-    ]
-
-    available = [
-        x for x in biomarker_columns
-        if x[1] is not None
-    ]
-
-    if not available:
-
-        st.warning(
-            "No biomarker columns were detected."
-        )
-
-    else:
-
-        selected = st.selectbox(
-            "Select Biomarker",
-            [
-                x[0]
-                for x in available
-            ]
-        )
-
-        selected_col = dict(
-            available
-        )[selected]
-
-        numeric_values = pd.to_numeric(
-            df[selected_col],
-            errors="coerce"
-        )
-
-        temp = pd.DataFrame({
-            "Value": numeric_values
-        }).dropna()
-
-        fig = px.histogram(
-            temp,
-            x="Value",
-            nbins=30,
-            title=f"{selected} Distribution"
-        )
-
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
-
-        # ----------------------------------------------------
-        # Biomarker vs mortality
-        # ----------------------------------------------------
-
-        analysis = df[
-            [
-                selected_col,
-                target_col
-            ]
-        ].copy()
-
-        analysis["Biomarker"] = pd.to_numeric(
-            analysis[selected_col],
-            errors="coerce"
-        )
-
-        analysis["Mortality"] = binary_target(
-            analysis[target_col]
-        )
-
-        analysis = analysis.dropna(
-            subset=[
-                "Biomarker",
-                "Mortality"
-            ]
-        )
-
-        if len(analysis) > 5:
-
-            fig = px.box(
-                analysis,
-                x="Mortality",
-                y="Biomarker",
-                points="outliers",
-                title=f"{selected} by Mortality Outcome"
-            )
-
-            fig.update_xaxes(
-                tickvals=[0, 1],
-                ticktext=[
-                    "Survival",
-                    "Mortality"
-                ]
-            )
-
-            st.plotly_chart(
-                fig,
-                use_container_width=True
-            )
-
-    # --------------------------------------------------------
-    # Inflammation + Albumin
-    # --------------------------------------------------------
-
-    st.subheader(
-        "Inflammation + Albumin Risk Groups"
-    )
-
-    if crp_col and albumin_col and target_col:
-
-        combo = df[
-            [
-                crp_col,
-                albumin_col,
-                target_col
-            ]
-        ].copy()
-
-        combo["CRP"] = pd.to_numeric(
-            combo[crp_col],
-            errors="coerce"
-        )
-
-        combo["Albumin"] = pd.to_numeric(
-            combo[albumin_col],
-            errors="coerce"
-        )
-
-        combo["Mortality"] = binary_target(
-            combo[target_col]
-        )
-
-        combo = combo.dropna(
-            subset=[
-                "CRP",
-                "Albumin",
-                "Mortality"
-            ]
-        )
-
-        if len(combo) >= 10:
-
-            crp_cut = combo["CRP"].median()
-            albumin_cut = combo["Albumin"].median()
-
-            combo["Inflammation Group"] = np.where(
-                combo["CRP"] >= crp_cut,
-                "Higher CRP",
-                "Lower CRP"
-            )
-
-            combo["Albumin Group"] = np.where(
-                combo["Albumin"] < albumin_cut,
-                "Lower Albumin",
-                "Higher Albumin"
-            )
-
-            combo["Risk Group"] = (
-                combo["Inflammation Group"]
-                + " + "
-                + combo["Albumin Group"]
-            )
-
-            combo_result = (
-                combo
-                .groupby("Risk Group")["Mortality"]
-                .agg(
-                    Patients="count",
-                    Mortality_Rate="mean"
-                )
-                .reset_index()
-            )
-
-            combo_result[
-                "Mortality_Rate"
-            ] *= 100
-
-            fig = px.bar(
-                combo_result,
-                x="Risk Group",
-                y="Mortality_Rate",
-                text="Mortality_Rate",
-                title="Mortality by Inflammation + Albumin Group"
-            )
-
-            fig.update_traces(
-                texttemplate="%{text:.1f}%",
-                textposition="outside"
-            )
-
-            st.plotly_chart(
-                fig,
-                use_container_width=True
-            )
-
-            st.dataframe(
-                combo_result,
-                use_container_width=True,
-                hide_index=True
-            )
-
-
-# ============================================================
-# 6. MORTALITY ANALYSIS
-# ============================================================
-
-elif page == "⚠️ Mortality Analysis":
-
-    st.markdown(
-        '<div class="main-title">Mortality Analysis</div>',
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        '<div class="subtitle">Interactive mortality analysis across demographic and clinical characteristics</div>',
-        unsafe_allow_html=True
-    )
-
-    outcome_options = {}
-
-    if mortality_col:
-        outcome_options[
-            "In-Hospital Mortality"
-        ] = mortality_col
-
-    if mortality28_col:
-        outcome_options[
-            "28-Day Mortality"
-        ] = mortality28_col
-
-    if not outcome_options:
-
-        st.error(
-            "Mortality variables were not detected."
-        )
-        st.stop()
-
-    selected_outcome = st.selectbox(
-        "Select Mortality Outcome",
-        list(outcome_options.keys())
-    )
-
-    target_col = outcome_options[
-        selected_outcome
-    ]
-
-    candidate_groups = [
-        ("Age", age_col),
-        ("Gender", gender_col),
-        ("BMI", bmi_col),
-        ("Age Category", agecat_col),
-        ("NYHA", nyha_col),
-        ("Killip", killip_col),
-        ("Occupation", occupation_col)
-    ]
-
-    available_groups = [
-        x for x in candidate_groups
-        if x[1] is not None
-    ]
-
-    selected_group_name = st.selectbox(
-        "Analyze Mortality By",
-        [
-            x[0]
-            for x in available_groups
-        ]
-    )
-
-    selected_group_col = dict(
-        available_groups
-    )[selected_group_name]
-
-    result = group_mortality(
-        df,
-        selected_group_col,
-        target_col
-    )
-
-    if not result.empty:
-
-        fig = px.bar(
-            result,
-            x=selected_group_col,
-            y="Mortality_Rate",
-            text="Mortality_Rate",
-            title=f"{selected_outcome} by {selected_group_name}"
-        )
-
-        fig.update_traces(
-            texttemplate="%{text:.1f}%",
-            textposition="outside"
-        )
-
-        fig.update_yaxes(
-            title="Mortality (%)"
-        )
-
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
-
-        st.dataframe(
-            result,
-            use_container_width=True,
-            hide_index=True
-        )
-
-    # --------------------------------------------------------
-    # Age vs mortality
-    # --------------------------------------------------------
-
-    if age_col:
-
-        st.subheader(
-            "Age and Mortality"
-        )
-
-        age_data = df[
-            [
-                age_col,
-                target_col
-            ]
-        ].copy()
-
-        age_data["Age"] = pd.to_numeric(
-            age_data[age_col],
-            errors="coerce"
-        )
-
-        age_data["Mortality"] = binary_target(
-            age_data[target_col]
-        )
-
-        age_data = age_data.dropna()
-
-        if len(age_data) > 10:
-
-            age_data["Age Group"] = pd.cut(
-                age_data["Age"],
-                bins=[
-                    0,
-                    40,
-                    50,
-                    60,
-                    70,
-                    80,
-                    200
-                ],
-                labels=[
-                    "<40",
-                    "40-49",
-                    "50-59",
-                    "60-69",
-                    "70-79",
-                    "80+"
-                ]
-            )
-
-            age_result = (
-                age_data
-                .groupby(
-                    "Age Group",
-                    observed=False
-                )["Mortality"]
-                .agg(
-                    Patients="count",
-                    Mortality_Rate="mean"
-                )
-                .reset_index()
-            )
-
-            age_result[
-                "Mortality_Rate"
-            ] *= 100
-
-            fig = px.bar(
-                age_result,
-                x="Age Group",
-                y="Mortality_Rate",
-                text="Mortality_Rate",
-                title="Mortality by Age Group"
-            )
-
-            fig.update_traces(
-                texttemplate="%{text:.1f}%",
-                textposition="outside"
-            )
-
-            st.plotly_chart(
-                fig,
-                use_container_width=True
-            )
-
-
-# ============================================================
-# 7. RELATIONSHIP EXPLORER
-# ============================================================
-
-elif page == "🔎 Relationship Explorer":
-
-    st.markdown(
-        '<div class="main-title">Relationship Explorer</div>',
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        '<div class="subtitle">Explore relationships among demographic, cardiac and laboratory variables</div>',
-        unsafe_allow_html=True
-    )
-
-    numeric_columns = []
-
-    for col in df.columns:
-
-        converted = pd.to_numeric(
-            df[col],
-            errors="coerce"
-        )
-
-        if converted.notna().sum() > 10:
-
-            numeric_columns.append(col)
-
-    if len(numeric_columns) >= 2:
-
-        c1, c2 = st.columns(2)
-
-        with c1:
-
-            x_col = st.selectbox(
-                "X Variable",
-                numeric_columns,
-                index=0
-            )
-
-        with c2:
-
-            y_col = st.selectbox(
-                "Y Variable",
-                numeric_columns,
-                index=min(
-                    1,
-                    len(numeric_columns) - 1
-                )
-            )
-
-        relationship = df[
-            [
-                x_col,
-                y_col
-            ]
-        ].copy()
-
-        relationship[x_col] = pd.to_numeric(
-            relationship[x_col],
-            errors="coerce"
-        )
-
-        relationship[y_col] = pd.to_numeric(
-            relationship[y_col],
-            errors="coerce"
-        )
-
-        relationship = relationship.dropna()
-
-        if len(relationship) > 2:
-
-            fig = px.scatter(
-                relationship,
-                x=x_col,
-                y=y_col,
-                trendline="ols",
-                title=f"{x_col} vs {y_col}"
-            )
-
-            st.plotly_chart(
-                fig,
-                use_container_width=True
-            )
-
-            correlation = (
-                relationship[
-                    [x_col, y_col]
-                ]
-                .corr()
-                .iloc[0, 1]
-            )
-
-            st.metric(
-                "Pearson Correlation",
-                f"{correlation:.3f}"
-            )
-
-    # --------------------------------------------------------
-    # Correlation heatmap
-    # --------------------------------------------------------
-
-    st.subheader(
-        "Clinical Variable Correlation"
-    )
-
-    selected_numeric = numeric_columns[
-        :min(15, len(numeric_columns))
-    ]
-
-    if len(selected_numeric) >= 2:
-
-        corr = (
-            df[selected_numeric]
-            .apply(
-                pd.to_numeric,
-                errors="coerce"
-            )
-            .corr()
-        )
-
-        fig = px.imshow(
-            corr,
-            text_auto=".2f",
-            aspect="auto",
-            title="Correlation Matrix"
-        )
-
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
-
-
-# ============================================================
-# MODEL HELPER
-# ============================================================
-
-def prepare_ann_model(target_col):
-
-    # Candidate predictors
     candidate_features = [
         age_col,
         gender_col,
@@ -1834,1070 +1225,716 @@ def prepare_ann_model(target_col):
         crp_col,
         wbc_col,
         nlr_col,
-        albumin_col
+        albumin_col,
+        responsiveness_col,
     ]
 
-    features = []
+    features = [
+        c
+        for c in candidate_features
+        if c is not None and c != selected_target
+    ]
 
-    for col in candidate_features:
+    if len(features) < 2:
+        st.error(
+            "At least two usable predictor variables are required."
+        )
+    else:
 
-        if col is not None and col not in features:
-            features.append(col)
+        model_df = filtered_df[
+            features + [selected_target]
+        ].copy()
 
-    if not features:
-        return None
+        # Convert every feature to numeric.
+        # Categorical variables such as gender/responsiveness
+        # are factorized so that the ANN can use them.
+        for col in features:
 
-    model_df = df[
-        features + [target_col]
-    ].copy()
+            converted = pd.to_numeric(
+                model_df[col],
+                errors="coerce",
+            )
 
-    model_df["TARGET"] = binary_target(
-        model_df[target_col]
-    )
+            if converted.notna().sum() == 0:
 
-    model_df = model_df.dropna(
-        subset=["TARGET"]
-    )
+                codes, _ = pd.factorize(
+                    model_df[col].astype(str)
+                )
 
-    if len(model_df) < 30:
-        return None
+                model_df[col] = codes.astype(float)
 
-    y = model_df["TARGET"].astype(int)
+            else:
+                model_df[col] = converted
 
-    if y.nunique() < 2:
-        return None
-
-    X = model_df[
-        features
-    ].copy()
-
-    categorical_features = []
-
-    numerical_features = []
-
-    for col in features:
-
-        numeric_version = pd.to_numeric(
-            X[col],
-            errors="coerce"
+        model_df[selected_target] = pd.to_numeric(
+            model_df[selected_target],
+            errors="coerce",
         )
 
-        numeric_count = (
-            numeric_version.notna().sum()
-        )
+        model_df = model_df.replace(
+            [np.inf, -np.inf],
+            np.nan,
+        ).dropna()
 
-        if numeric_count >= 0.8 * len(X):
+        # Need both outcome classes
+        if model_df[selected_target].nunique() < 2:
 
-            X[col] = numeric_version
+            st.error(
+                "The selected mortality outcome does not contain "
+                "both survival and mortality classes after cleaning."
+            )
 
-            numerical_features.append(col)
+        elif len(model_df) < 30:
+
+            st.warning(
+                "Too few complete observations are available for a "
+                "stable demonstration model."
+            )
 
         else:
 
-            categorical_features.append(col)
+            X = model_df[features]
+            y = model_df[selected_target].astype(int)
 
-    transformers = []
+            class_counts = y.value_counts()
 
-    if numerical_features:
+            if class_counts.min() < 2:
 
-        numeric_pipeline = Pipeline(
-            steps=[
-                (
-                    "imputer",
-                    SimpleImputer(
-                        strategy="median"
-                    )
-                ),
-                (
-                    "scaler",
-                    StandardScaler()
+                st.error(
+                    "One mortality class has fewer than two observations."
                 )
-            ]
-        )
 
-        transformers.append(
-            (
-                "numeric",
-                numeric_pipeline,
-                numerical_features
-            )
-        )
+            else:
 
-    if categorical_features:
-
-        categorical_pipeline = Pipeline(
-            steps=[
-                (
-                    "imputer",
-                    SimpleImputer(
-                        strategy="most_frequent"
-                    )
-                ),
-                (
-                    "onehot",
-                    OneHotEncoder(
-                        handle_unknown="ignore"
-                    )
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X,
+                    y,
+                    test_size=0.20,
+                    random_state=42,
+                    stratify=y,
                 )
-            ]
-        )
 
-        transformers.append(
-            (
-                "categorical",
-                categorical_pipeline,
-                categorical_features
-            )
-        )
+                scaler = StandardScaler()
 
-    preprocessor = ColumnTransformer(
-        transformers=transformers
-    )
+                X_train_scaled = scaler.fit_transform(
+                    X_train
+                )
 
-    model = MLPClassifier(
-        hidden_layer_sizes=(64, 32),
-        max_iter=500,
-        random_state=42,
-        early_stopping=True
-    )
+                X_test_scaled = scaler.transform(
+                    X_test
+                )
 
-    pipeline = Pipeline(
-        steps=[
-            (
-                "preprocessor",
-                preprocessor
-            ),
-            (
-                "model",
-                model
-            )
-        ]
-    )
+                model = MLPClassifier(
+                    hidden_layer_sizes=(64, 32),
+                    max_iter=500,
+                    random_state=42,
+                )
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.20,
-        random_state=42,
-        stratify=y
-    )
+                model.fit(
+                    X_train_scaled,
+                    y_train,
+                )
 
-    pipeline.fit(
-        X_train,
-        y_train
-    )
+                predictions = model.predict(
+                    X_test_scaled
+                )
 
-    predictions = pipeline.predict(
-        X_test
-    )
+                probabilities = model.predict_proba(
+                    X_test_scaled
+                )[:, 1]
 
-    probabilities = pipeline.predict_proba(
-        X_test
-    )[:, 1]
+                accuracy = accuracy_score(
+                    y_test,
+                    predictions,
+                )
 
-    return {
-        "pipeline": pipeline,
-        "features": features,
-        "X_train": X_train,
-        "X_test": X_test,
-        "y_train": y_train,
-        "y_test": y_test,
-        "predictions": predictions,
-        "probabilities": probabilities,
-        "model_df": model_df
-    }
+                precision = precision_score(
+                    y_test,
+                    predictions,
+                    zero_division=0,
+                )
+
+                recall = recall_score(
+                    y_test,
+                    predictions,
+                    zero_division=0,
+                )
+
+                f1 = f1_score(
+                    y_test,
+                    predictions,
+                    zero_division=0,
+                )
+
+                try:
+                    auc = roc_auc_score(
+                        y_test,
+                        probabilities,
+                    )
+                except Exception:
+                    auc = np.nan
+
+                st.markdown("### Model Results")
+
+                c1, c2, c3, c4, c5 = st.columns(5)
+
+                with c1:
+                    metric_card(
+                        "🎯",
+                        "Accuracy",
+                        f"{accuracy:.3f}",
+                    )
+
+                with c2:
+                    metric_card(
+                        "🔎",
+                        "Precision",
+                        f"{precision:.3f}",
+                    )
+
+                with c3:
+                    metric_card(
+                        "🚨",
+                        "Recall",
+                        f"{recall:.3f}",
+                    )
+
+                with c4:
+                    metric_card(
+                        "⚖️",
+                        "F1 Score",
+                        f"{f1:.3f}",
+                    )
+
+                with c5:
+                    metric_card(
+                        "📈",
+                        "ROC-AUC",
+                        f"{auc:.3f}"
+                        if pd.notna(auc)
+                        else "N/A",
+                    )
+
+                st.markdown("### Model Inputs")
+
+                feature_table = pd.DataFrame(
+                    {
+                        "Feature": features,
+                        "Used in ANN": ["Yes"] * len(features),
+                    }
+                )
+
+                st.dataframe(
+                    feature_table,
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+                st.markdown("### Confusion Matrix")
+
+                cm = confusion_matrix(
+                    y_test,
+                    predictions,
+                )
+
+                fig = px.imshow(
+                    cm,
+                    text_auto=True,
+                    labels={
+                        "x": "Predicted",
+                        "y": "Actual",
+                        "color": "Patients",
+                    },
+                    x=["Survival", "Mortality"],
+                    y=["Survival", "Mortality"],
+                )
+
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True,
+                )
+
+                st.markdown(
+                    """
+                    <div class="research-note">
+                    <b>Interpretation:</b>
+                    Recall indicates the proportion of observed mortality
+                    cases identified by the model. ROC-AUC summarizes
+                    discrimination across probability thresholds.
+                    These metrics should be interpreted with the sample
+                    size, class balance, missingness and validation design
+                    in mind.
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
 
 # ============================================================
-# 8. AI PREDICTION
+# MODEL PERFORMANCE
 # ============================================================
 
-elif page == "🤖 AI Prediction":
+if page == "📈 Model Performance":
 
-    st.markdown(
-        '<div class="main-title">Artificial Neural Network Prediction</div>',
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        '<div class="subtitle">Experimental mortality prediction using demographic, cardiac and laboratory characteristics</div>',
-        unsafe_allow_html=True
-    )
-
-    outcome_options = {}
-
-    if mortality_col:
-        outcome_options[
-            "In-Hospital Mortality"
-        ] = mortality_col
-
-    if mortality28_col:
-        outcome_options[
-            "28-Day Mortality"
-        ] = mortality28_col
-
-    if not outcome_options:
-
-        st.error(
-            "No mortality outcome detected."
-        )
-        st.stop()
-
-    selected_outcome = st.selectbox(
-        "Prediction Target",
-        list(outcome_options.keys())
-    )
-
-    target_col = outcome_options[
-        selected_outcome
-    ]
-
-    result = prepare_ann_model(
-        target_col
-    )
-
-    if result is None:
-
-        st.error(
-            "The ANN could not be trained. "
-            "Check the target variable and available predictors."
-        )
-
-    else:
-
-        model = result["pipeline"]
-        features = result["features"]
-
-        st.subheader(
-            "Patient Input"
-        )
-
-        input_values = {}
-
-        cols = st.columns(2)
-
-        for i, feature in enumerate(features):
-
-            with cols[
-                i % 2
-            ]:
-
-                numeric_version = pd.to_numeric(
-                    df[feature],
-                    errors="coerce"
-                )
-
-                numeric_count = (
-                    numeric_version.notna().sum()
-                )
-
-                if numeric_count >= 0.8 * len(df):
-
-                    median_value = (
-                        numeric_version
-                        .median()
-                    )
-
-                    minimum = (
-                        numeric_version
-                        .min()
-                    )
-
-                    maximum = (
-                        numeric_version
-                        .max()
-                    )
-
-                    if pd.isna(median_value):
-                        median_value = 0
-
-                    if pd.isna(minimum):
-                        minimum = 0
-
-                    if pd.isna(maximum):
-                        maximum = median_value + 1
-
-                    if minimum == maximum:
-                        maximum = minimum + 1
-
-                    input_values[
-                        feature
-                    ] = st.number_input(
-                        feature.replace(
-                            "_",
-                            " "
-                        ).title(),
-                        min_value=float(
-                            minimum
-                        ),
-                        max_value=float(
-                            maximum
-                        ),
-                        value=float(
-                            median_value
-                        )
-                    )
-
-                else:
-
-                    choices = (
-                        df[feature]
-                        .dropna()
-                        .astype(str)
-                        .unique()
-                        .tolist()
-                    )
-
-                    if choices:
-
-                        input_values[
-                            feature
-                        ] = st.selectbox(
-                            feature.replace(
-                                "_",
-                                " "
-                            ).title(),
-                            choices
-                        )
-
-        st.write("")
-
-        if st.button(
-            "❤️ Calculate Mortality Risk",
-            type="primary",
-            use_container_width=True
-        ):
-
-            patient_input = pd.DataFrame(
-                [input_values]
-            )
-
-            probability = model.predict_proba(
-                patient_input
-            )[0, 1]
-
-            prediction = model.predict(
-                patient_input
-            )[0]
-
-            st.divider()
-
-            c1, c2 = st.columns(2)
-
-            with c1:
-
-                st.metric(
-                    "Predicted Mortality Probability",
-                    f"{probability * 100:.1f}%"
-                )
-
-                st.progress(
-                    float(probability)
-                )
-
-            with c2:
-
-                if prediction == 1:
-
-                    st.markdown(
-                        f"""
-                        <div class="risk-box">
-
-                        <h3>⚠️ Model Classification</h3>
-
-                        The ANN classified this input
-                        into the mortality class.
-
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
-                else:
-
-                    st.markdown(
-                        f"""
-                        <div class="insight-box">
-
-                        <h3>✓ Model Classification</h3>
-
-                        The ANN classified this input
-                        into the non-mortality class.
-
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
-            st.warning(
-                "Research-use prediction only. "
-                "This model is not a clinical diagnosis "
-                "or treatment recommendation."
-            )
-
-
-# ============================================================
-# 9. MODEL PERFORMANCE
-# ============================================================
-
-elif page == "📈 Model Performance":
-
-    st.markdown(
-        '<div class="main-title">ANN Model Performance</div>',
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        '<div class="subtitle">Evaluation of mortality classification performance</div>',
-        unsafe_allow_html=True
-    )
-
-    outcome_options = {}
-
-    if mortality_col:
-        outcome_options[
-            "In-Hospital Mortality"
-        ] = mortality_col
-
-    if mortality28_col:
-        outcome_options[
-            "28-Day Mortality"
-        ] = mortality28_col
-
-    if not outcome_options:
-
-        st.error(
-            "No mortality outcome detected."
-        )
-        st.stop()
-
-    selected_outcome = st.selectbox(
-        "Model Target",
-        list(outcome_options.keys())
-    )
-
-    target_col = outcome_options[
-        selected_outcome
-    ]
-
-    result = prepare_ann_model(
-        target_col
-    )
-
-    if result is None:
-
-        st.error(
-            "Unable to train ANN."
-        )
-
-    else:
-
-        y_test = result["y_test"]
-        predictions = result["predictions"]
-        probabilities = result["probabilities"]
-
-        accuracy = accuracy_score(
-            y_test,
-            predictions
-        )
-
-        precision = precision_score(
-            y_test,
-            predictions,
-            zero_division=0
-        )
-
-        recall = recall_score(
-            y_test,
-            predictions,
-            zero_division=0
-        )
-
-        f1 = f1_score(
-            y_test,
-            predictions,
-            zero_division=0
-        )
-
-        auc = roc_auc_score(
-            y_test,
-            probabilities
-        )
-
-        c1, c2, c3, c4, c5 = st.columns(5)
-
-        with c1:
-            metric_card(
-                "🎯",
-                "Accuracy",
-                f"{accuracy:.3f}"
-            )
-
-        with c2:
-            metric_card(
-                "🔎",
-                "Precision",
-                f"{precision:.3f}"
-            )
-
-        with c3:
-            metric_card(
-                "🚨",
-                "Recall",
-                f"{recall:.3f}"
-            )
-
-        with c4:
-            metric_card(
-                "⚖️",
-                "F1 Score",
-                f"{f1:.3f}"
-            )
-
-        with c5:
-            metric_card(
-                "📈",
-                "ROC-AUC",
-                f"{auc:.3f}"
-            )
-
-        st.divider()
-
-        c1, c2 = st.columns(2)
-
-        # ----------------------------------------------------
-        # Confusion matrix
-        # ----------------------------------------------------
-
-        with c1:
-
-            st.subheader(
-                "Confusion Matrix"
-            )
-
-            cm = confusion_matrix(
-                y_test,
-                predictions
-            )
-
-            fig = px.imshow(
-                cm,
-                text_auto=True,
-                labels={
-                    "x": "Predicted",
-                    "y": "Actual",
-                    "color": "Patients"
-                },
-                x=[
-                    "Survival",
-                    "Mortality"
-                ],
-                y=[
-                    "Survival",
-                    "Mortality"
-                ],
-                title="ANN Confusion Matrix"
-            )
-
-            st.plotly_chart(
-                fig,
-                use_container_width=True
-            )
-
-        # ----------------------------------------------------
-        # ROC
-        # ----------------------------------------------------
-
-        with c2:
-
-            st.subheader(
-                "ROC Curve"
-            )
-
-            fpr, tpr, _ = roc_curve(
-                y_test,
-                probabilities
-            )
-
-            fig = go.Figure()
-
-            fig.add_trace(
-                go.Scatter(
-                    x=fpr,
-                    y=tpr,
-                    mode="lines",
-                    name=f"ANN AUC = {auc:.3f}"
-                )
-            )
-
-            fig.add_trace(
-                go.Scatter(
-                    x=[0, 1],
-                    y=[0, 1],
-                    mode="lines",
-                    name="Random"
-                )
-            )
-
-            fig.update_layout(
-                xaxis_title="False Positive Rate",
-                yaxis_title="True Positive Rate",
-                title="ROC Curve",
-                height=450
-            )
-
-            st.plotly_chart(
-                fig,
-                use_container_width=True
-            )
-
-        st.subheader(
-            "ANN Input Features"
-        )
-
-        feature_table = pd.DataFrame({
-            "Feature": result["features"],
-            "Used in ANN": "Yes"
-        })
-
-        st.dataframe(
-            feature_table,
-            use_container_width=True,
-            hide_index=True
-        )
-
-
-# ============================================================
-# 10. DATA-DRIVEN INSIGHTS
-# ============================================================
-
-elif page == "💡 Data-Driven Insights":
-
-    st.markdown(
-        '<div class="main-title">Data-Driven Insights & Analytical Flags</div>',
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        '<div class="subtitle">Automatically generated observations from the observed dataset</div>',
-        unsafe_allow_html=True
-    )
+    st.header("📈 ANN Model Performance")
 
     st.info(
-        "These are analytical flags based on observed data patterns. "
-        "They are not clinical treatment recommendations."
+        "This page trains the same ANN workflow on the selected outcome "
+        "and displays evaluation metrics, ROC curve and confusion matrix."
     )
 
     target_options = {}
 
-    if mortality_col:
-        target_options[
-            "In-Hospital Mortality"
-        ] = mortality_col
+    if in_hospital_col:
+        target_options["In-Hospital Mortality"] = "_in_hospital_target"
 
-    if mortality28_col:
-        target_options[
-            "28-Day Mortality"
-        ] = mortality28_col
+    if mortality_28d_col:
+        target_options["28-Day Mortality"] = "_28d_target"
 
-    if target_options:
+    if not target_options:
+        st.error("No mortality outcome detected.")
+        st.stop()
 
-        selected = st.selectbox(
-            "Outcome",
-            list(target_options.keys())
+    selected_target_label = st.selectbox(
+        "Outcome",
+        list(target_options.keys()),
+        key="performance_target",
+    )
+
+    selected_target = target_options[selected_target_label]
+
+    candidate_features = [
+        age_col,
+        gender_col,
+        bmi_col,
+        nyha_col,
+        killip_col,
+        crp_col,
+        wbc_col,
+        nlr_col,
+        albumin_col,
+        responsiveness_col,
+    ]
+
+    features = [
+        c
+        for c in candidate_features
+        if c is not None
+    ]
+
+    if len(features) < 2:
+        st.error("Not enough predictor variables were detected.")
+    else:
+
+        model_df = filtered_df[
+            features + [selected_target]
+        ].copy()
+
+        for col in features:
+
+            numeric = pd.to_numeric(
+                model_df[col],
+                errors="coerce",
+            )
+
+            if numeric.notna().sum() == 0:
+
+                codes, _ = pd.factorize(
+                    model_df[col].astype(str)
+                )
+
+                model_df[col] = codes.astype(float)
+
+            else:
+
+                model_df[col] = numeric
+
+        model_df[selected_target] = pd.to_numeric(
+            model_df[selected_target],
+            errors="coerce",
         )
 
-        target = target_options[selected]
+        model_df = model_df.replace(
+            [np.inf, -np.inf],
+            np.nan,
+        ).dropna()
 
-        # ----------------------------------------------------
-        # NYHA flag
-        # ----------------------------------------------------
+        if model_df[selected_target].nunique() < 2:
+
+            st.error(
+                "The outcome must contain both survival and mortality."
+            )
+
+        elif len(model_df) < 30:
+
+            st.warning(
+                "At least 30 complete observations are recommended "
+                "for this demonstration."
+            )
+
+        else:
+
+            X = model_df[features]
+            y = model_df[selected_target].astype(int)
+
+            if y.value_counts().min() < 2:
+
+                st.error(
+                    "Insufficient observations in one outcome class."
+                )
+
+            else:
+
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X,
+                    y,
+                    test_size=0.20,
+                    random_state=42,
+                    stratify=y,
+                )
+
+                scaler = StandardScaler()
+
+                X_train_scaled = scaler.fit_transform(
+                    X_train
+                )
+
+                X_test_scaled = scaler.transform(
+                    X_test
+                )
+
+                model = MLPClassifier(
+                    hidden_layer_sizes=(64, 32),
+                    max_iter=500,
+                    random_state=42,
+                )
+
+                model.fit(
+                    X_train_scaled,
+                    y_train,
+                )
+
+                predictions = model.predict(
+                    X_test_scaled
+                )
+
+                probabilities = model.predict_proba(
+                    X_test_scaled
+                )[:, 1]
+
+                accuracy = accuracy_score(
+                    y_test,
+                    predictions,
+                )
+
+                precision = precision_score(
+                    y_test,
+                    predictions,
+                    zero_division=0,
+                )
+
+                recall = recall_score(
+                    y_test,
+                    predictions,
+                    zero_division=0,
+                )
+
+                f1 = f1_score(
+                    y_test,
+                    predictions,
+                    zero_division=0,
+                )
+
+                auc = roc_auc_score(
+                    y_test,
+                    probabilities,
+                )
+
+                c1, c2, c3, c4, c5 = st.columns(5)
+
+                with c1:
+                    metric_card(
+                        "🎯",
+                        "Accuracy",
+                        f"{accuracy:.3f}",
+                    )
+
+                with c2:
+                    metric_card(
+                        "🔎",
+                        "Precision",
+                        f"{precision:.3f}",
+                    )
+
+                with c3:
+                    metric_card(
+                        "🚨",
+                        "Recall",
+                        f"{recall:.3f}",
+                    )
+
+                with c4:
+                    metric_card(
+                        "⚖️",
+                        "F1",
+                        f"{f1:.3f}",
+                    )
+
+                with c5:
+                    metric_card(
+                        "📈",
+                        "ROC-AUC",
+                        f"{auc:.3f}",
+                    )
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+
+                    st.subheader("Confusion Matrix")
+
+                    cm = confusion_matrix(
+                        y_test,
+                        predictions,
+                    )
+
+                    fig = px.imshow(
+                        cm,
+                        text_auto=True,
+                        labels={
+                            "x": "Predicted",
+                            "y": "Actual",
+                            "color": "Patients",
+                        },
+                        x=["Survival", "Mortality"],
+                        y=["Survival", "Mortality"],
+                    )
+
+                    st.plotly_chart(
+                        fig,
+                        use_container_width=True,
+                    )
+
+                with col2:
+
+                    st.subheader("ROC Curve")
+
+                    fpr, tpr, _ = roc_curve(
+                        y_test,
+                        probabilities,
+                    )
+
+                    fig = go.Figure()
+
+                    fig.add_trace(
+                        go.Scatter(
+                            x=fpr,
+                            y=tpr,
+                            mode="lines",
+                            name=f"ANN AUC = {auc:.3f}",
+                        )
+                    )
+
+                    fig.add_trace(
+                        go.Scatter(
+                            x=[0, 1],
+                            y=[0, 1],
+                            mode="lines",
+                            name="Random",
+                        )
+                    )
+
+                    fig.update_layout(
+                        xaxis_title="False Positive Rate",
+                        yaxis_title="True Positive Rate",
+                        height=450,
+                    )
+
+                    st.plotly_chart(
+                        fig,
+                        use_container_width=True,
+                    )
+
+                st.subheader("Model Input Features")
+
+                feature_table = pd.DataFrame(
+                    {
+                        "Feature": features,
+                        "Used in ANN": ["Yes"] * len(features),
+                    }
+                )
+
+                st.dataframe(
+                    feature_table,
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+
+# ============================================================
+# DECISION SUPPORT / PRESCRIPTIVE ANALYTICS
+# ============================================================
+
+if page == "💡 Decision Support":
+
+    st.header("💡 Decision-Support Analytics")
+
+    st.markdown(
+        """
+        This section translates the descriptive and predictive findings
+        into structured areas for clinical review. It is intended as a
+        research decision-support layer, not as an automated treatment
+        recommendation.
+        """
+    )
+
+    st.markdown("### 1. Cardiac Severity Review")
+
+    if nyha_col or killip_col:
 
         if nyha_col:
-
-            result = group_mortality(
-                df,
-                nyha_col,
-                target
+            nyha_values = pd.to_numeric(
+                filtered_df[nyha_col],
+                errors="coerce",
             )
 
-            if not result.empty:
+            if nyha_values.notna().any():
 
-                highest = result.loc[
-                    result["Mortality_Rate"].idxmax()
-                ]
+                high_nyha = (
+                    nyha_values >= nyha_values.median()
+                ).mean() * 100
 
-                st.markdown(
-                    f"""
-                    <div class="insight-box">
-
-                    <b>❤️ Cardiac Severity Flag</b><br><br>
-
-                    The observed mortality rate varies across
-                    NYHA categories.
-
-                    The category with the highest observed
-                    mortality rate in this dataset is:
-
-                    <b>{highest[nyha_col]}</b>
-
-                    with an observed mortality rate of
-
-                    <b>{highest["Mortality_Rate"]:.1f}%</b>.
-
-                    <br><br>
-
-                    <b>Analytical action:</b>
-                    review this subgroup alongside other
-                    cardiac and laboratory variables.
-
-                    </div>
-                    """,
-                    unsafe_allow_html=True
+                st.write(
+                    f"• {high_nyha:.1f}% of filtered records are "
+                    "at or above the median NYHA severity."
                 )
-
-        # ----------------------------------------------------
-        # Killip flag
-        # ----------------------------------------------------
 
         if killip_col:
-
-            result = group_mortality(
-                df,
-                killip_col,
-                target
+            killip_values = pd.to_numeric(
+                filtered_df[killip_col],
+                errors="coerce",
             )
 
-            if not result.empty:
+            if killip_values.notna().any():
 
-                highest = result.loc[
-                    result["Mortality_Rate"].idxmax()
-                ]
+                high_killip = (
+                    killip_values >= killip_values.median()
+                ).mean() * 100
 
-                st.markdown(
-                    f"""
-                    <div class="insight-box">
-
-                    <b>🚨 Killip Severity Flag</b><br><br>
-
-                    Mortality varies across Killip categories.
-
-                    The category with the highest observed
-                    mortality rate is:
-
-                    <b>{highest[killip_col]}</b>
-
-                    with an observed mortality rate of
-
-                    <b>{highest["Mortality_Rate"]:.1f}%</b>.
-
-                    <br><br>
-
-                    <b>Analytical action:</b>
-                    examine this subgroup with NYHA,
-                    biomarker and demographic characteristics.
-
-                    </div>
-                    """,
-                    unsafe_allow_html=True
+                st.write(
+                    f"• {high_killip:.1f}% of filtered records are "
+                    "at or above the median Killip severity."
                 )
 
-        # ----------------------------------------------------
-        # Albumin + inflammation
-        # ----------------------------------------------------
+    else:
+        st.info("NYHA/Killip data not detected.")
 
-        if (
-            crp_col
-            and albumin_col
-        ):
+    st.markdown("### 2. Inflammation & Nutrition Review")
 
-            combo = df[
-                [
-                    crp_col,
-                    albumin_col,
-                    target
-                ]
-            ].copy()
+    available = []
 
-            combo["CRP"] = pd.to_numeric(
-                combo[crp_col],
-                errors="coerce"
-            )
+    if crp_col:
+        available.append("hs-CRP")
 
-            combo["Albumin"] = pd.to_numeric(
-                combo[albumin_col],
-                errors="coerce"
-            )
+    if wbc_col:
+        available.append("WBC")
 
-            combo["Mortality"] = binary_target(
-                combo[target]
-            )
+    if nlr_col:
+        available.append("NLR")
 
-            combo = combo.dropna()
+    if albumin_col:
+        available.append("Albumin")
 
-            if len(combo) >= 10:
+    if available:
 
-                crp_median = combo[
-                    "CRP"
-                ].median()
+        st.write(
+            "Available markers for combined review: "
+            + ", ".join(available)
+            + "."
+        )
 
-                albumin_median = combo[
-                    "Albumin"
-                ].median()
+        st.write(
+            "Consider reviewing elevated inflammatory markers together "
+            "with low albumin rather than interpreting a single marker "
+            "in isolation."
+        )
 
-                combo["Group"] = np.select(
-                    [
-                        (
-                            combo["CRP"]
-                            >= crp_median
-                        )
-                        &
-                        (
-                            combo["Albumin"]
-                            < albumin_median
-                        ),
+    else:
+        st.info("Inflammatory/nutritional markers were not detected.")
 
-                        (
-                            combo["CRP"]
-                            >= crp_median
-                        )
-                        &
-                        (
-                            combo["Albumin"]
-                            >= albumin_median
-                        ),
+    st.markdown("### 3. Mortality Risk Review")
 
-                        (
-                            combo["CRP"]
-                            < crp_median
-                        )
-                        &
-                        (
-                            combo["Albumin"]
-                            < albumin_median
-                        )
-                    ],
-                    [
-                        "Higher inflammation + Lower albumin",
-                        "Higher inflammation + Higher albumin",
-                        "Lower inflammation + Lower albumin"
-                    ],
-                    default="Lower inflammation + Higher albumin"
-                )
+    ih_rate = mortality_rate(
+        filtered_df,
+        "_in_hospital_target",
+    )
 
-                result = (
-                    combo
-                    .groupby("Group")[
-                        "Mortality"
-                    ]
-                    .agg(
-                        Patients="count",
-                        Mortality_Rate="mean"
-                    )
-                    .reset_index()
-                )
+    d28_rate = mortality_rate(
+        filtered_df,
+        "_28d_target",
+    )
 
-                result[
-                    "Mortality_Rate"
-                ] *= 100
+    if pd.notna(ih_rate):
+        st.write(
+            f"• Observed in-hospital mortality in the selected population: "
+            f"{ih_rate:.1f}%."
+        )
 
-                highest = result.loc[
-                    result["Mortality_Rate"].idxmax()
-                ]
+    if pd.notna(d28_rate):
+        st.write(
+            f"• Observed 28-day mortality in the selected population: "
+            f"{d28_rate:.1f}%."
+        )
 
-                st.markdown(
-                    f"""
-                    <div class="warning-box">
+    st.markdown("### 4. Suggested Review Checklist")
 
-                    <b>🧪 Inflammation + Nutrition Flag</b><br><br>
+    checklist = pd.DataFrame(
+        {
+            "Domain": [
+                "Demographics",
+                "Cardiac severity",
+                "Inflammation",
+                "Nutrition",
+                "Responsiveness",
+                "Mortality outcome",
+            ],
+            "Review area": [
+                "Age, gender, BMI and baseline characteristics",
+                "NYHA and Killip severity",
+                "hs-CRP, WBC and NLR",
+                "Albumin and nutritional status",
+                "Clinical responsiveness indicator",
+                "In-hospital and/or 28-day mortality",
+            ],
+        }
+    )
 
-                    The observed mortality rate differs across
-                    inflammation and albumin groups.
-
-                    The group with the highest observed mortality
-                    rate is:
-
-                    <b>{highest["Group"]}</b>
-
-                    with an observed mortality rate of
-
-                    <b>{highest["Mortality_Rate"]:.1f}%</b>.
-
-                    <br><br>
-
-                    <b>Analytical action:</b>
-                    use the combined inflammatory and nutritional
-                    profile as a subgroup for further outcome review.
-
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-
-# ============================================================
-# 11. RESEARCH QUESTIONS
-# ============================================================
-
-elif page == "📋 Research Questions":
-
-    st.markdown(
-        '<div class="main-title">Research Question Explorer</div>',
-        unsafe_allow_html=True
+    st.dataframe(
+        checklist,
+        use_container_width=True,
+        hide_index=True,
     )
 
     st.markdown(
-        '<div class="subtitle">Connect dashboard analyses with the study questions</div>',
-        unsafe_allow_html=True
-    )
-
-    questions = {
-
-        "Q1 — Demographics and mortality":
         """
-        Can demographic characteristics such as age, gender,
-        weight, height, BMI and occupation predict mortality?
-        """,
-
-        "Q2 — NYHA and mortality":
-        """
-        Can NYHA cardiac functional class predict
-        in-hospital and 28-day mortality?
-        """,
-
-        "Q3 — Killip and mortality":
-        """
-        Can Killip grade predict short-term mortality?
-        """,
-
-        "Q4 — NYHA + Killip":
-        """
-        Can combined NYHA and Killip severity provide
-        additional mortality discrimination?
-        """,
-
-        "Q5 — Inflammatory biomarkers":
-        """
-        Can hs-CRP, WBC and NLR identify mortality patterns?
-        """,
-
-        "Q6 — Inflammation + albumin":
-        """
-        Do elevated inflammatory markers together with
-        lower albumin identify a higher-mortality subgroup?
-        """,
-
-        "Q7 — Combined clinical model":
-        """
-        Does adding cardiac and laboratory characteristics
-        improve mortality prediction beyond demographic
-        characteristics?
-        """,
-
-        "Q8 — Artificial Neural Network":
-        """
-        Can an ANN combine demographic, cardiac and laboratory
-        variables to classify mortality outcomes?
-        """,
-
-        "Q9 — 28-day mortality":
-        """
-        Can demographic, clinical, cardiac and laboratory
-        characteristics be combined to predict 28-day mortality?
-        """
-    }
-
-    selected_question = st.selectbox(
-        "Select Research Question",
-        list(questions.keys())
-    )
-
-    st.markdown(
-        f"""
-        <div class="info-box">
-
-        <h3>{selected_question}</h3>
-
-        {questions[selected_question]}
-
+        <div class="risk-note">
+        <b>Important:</b> These are analytical review prompts, not
+        individualized treatment instructions. Any clinical action should
+        be based on the complete patient record and qualified clinical
+        judgment.
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
-
-    st.subheader(
-        "Recommended Dashboard Analysis"
-    )
-
-    if selected_question.startswith("Q1"):
-
-        st.write(
-            "Use Patient Profile, Mortality Analysis and "
-            "Relationship Explorer."
-        )
-
-    elif selected_question.startswith("Q2"):
-
-        st.write(
-            "Use Cardiac Risk → NYHA mortality analysis."
-        )
-
-    elif selected_question.startswith("Q3"):
-
-        st.write(
-            "Use Cardiac Risk → Killip mortality analysis."
-        )
-
-    elif selected_question.startswith("Q4"):
-
-        st.write(
-            "Use the NYHA × Killip mortality heatmap."
-        )
-
-    elif selected_question.startswith("Q5"):
-
-        st.write(
-            "Use Biomarkers & Nutrition and Relationship Explorer."
-        )
-
-    elif selected_question.startswith("Q6"):
-
-        st.write(
-            "Use the Inflammation + Albumin subgroup analysis."
-        )
-
-    elif selected_question.startswith("Q7"):
-
-        st.write(
-            "Use AI Prediction and Model Performance."
-        )
-
-    elif selected_question.startswith("Q8"):
-
-        st.write(
-            "Use AI Prediction and Model Performance."
-        )
-
-    elif selected_question.startswith("Q9"):
-
-        st.write(
-            "Use AI Prediction with the 28-day mortality target."
-        )
 
 
 # ============================================================
 # FOOTER
 # ============================================================
 
-st.divider()
+st.markdown("---")
 
 st.caption(
-    "Heart Failure Clinical Analytics Dashboard | "
-    "Descriptive • Predictive • Data-Driven Analytics"
-)
-
-st.caption(
-    "For research and analytical use only. "
-    "Model outputs should not be interpreted as clinical diagnosis "
-    "or treatment recommendations."
+    "HeartCare AI | Heart Failure Clinical Analytics Dashboard | "
+    "Research and analytical use only"
 )
