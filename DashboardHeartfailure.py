@@ -166,30 +166,21 @@ st.markdown("""
 
 
 # ============================================================
-# LOAD DATA
+# LOAD DATA FROM GITHUB REPOSITORY
 # ============================================================
+
+from pathlib import Path
+
+DATA_FILE = Path(__file__).parent / "Cardiac_Cleaned_Data.xlsb"
 
 @st.cache_data
 def load_data():
-
-    data_file = "Cardiac_Cleaned_Data.xlsb"
-
-    return pd.read_excel(
-        data_file,
-        engine="pyxlsb"
-    )
-
+    return pd.read_excel(DATA_FILE, engine="pyxlsb")
 
 try:
-
     df = load_data()
-
 except Exception as e:
-
-    st.error(
-        f"Could not load Cardiac_Cleaned_Data.xlsb from the GitHub repository: {e}"
-    )
-
+    st.error(f"Could not load Cardiac_Cleaned_Data.xlsb: {e}")
     st.stop()
 
 
@@ -216,6 +207,11 @@ def find_column(possible_names):
 age_col = find_column([
     "age",
     "age_years"
+])
+
+agecat_col = find_column([
+    "agecat",
+    "age_category"
 ])
 
 gender_col = find_column([
@@ -262,12 +258,23 @@ albumin_col = find_column([
     "Albumin"
 ])
 
-mortality_col = find_column([
-    "in_hospital_mortality",
-    "hospital_mortality",
-    "mortality",
-    "death"
+# The cleaned dataset stores in-hospital outcome as text.
+outcome_col = find_column([
+    "outcome_during_hospitalization"
 ])
+
+if outcome_col:
+    df["in_hospital_mortality"] = (
+        df[outcome_col].astype(str).str.strip().str.lower().eq("dead").astype(int)
+    )
+    mortality_col = "in_hospital_mortality"
+else:
+    mortality_col = find_column([
+        "in_hospital_mortality",
+        "hospital_mortality",
+        "mortality",
+        "death"
+    ])
 
 mortality28_col = find_column([
     "mortality_28d",
@@ -329,20 +336,13 @@ with st.sidebar:
 # HEADER
 # ============================================================
 
-st.markdown(
+st.html(
     """
     <div class="hospital-header">
-
         <h1>❤️ Heart Failure Clinical Analytics</h1>
-
-        <p>
-        Patient Risk Stratification • Mortality Analysis •
-        Artificial Neural Network Prediction
-        </p>
-
+        <p>Patient Risk Stratification • Mortality Analysis • Artificial Neural Network Prediction</p>
     </div>
-    """,
-    unsafe_allow_html=True
+    """
 )
 
 
@@ -351,24 +351,14 @@ st.markdown(
 # ============================================================
 
 def metric_card(icon, title, value):
-
-    st.markdown(
+    st.html(
         f"""
         <div class="metric-card">
-
             <div class="metric-icon">{icon}</div>
-
-            <div class="metric-title">
-                {title}
-            </div>
-
-            <div class="metric-value">
-                {value}
-            </div>
-
+            <div class="metric-title">{title}</div>
+            <div class="metric-value">{value}</div>
         </div>
-        """,
-        unsafe_allow_html=True
+        """
     )
 
 
@@ -450,10 +440,10 @@ if page == "🏥 Overview":
 
         metric_card(
             "🎂",
-            "Average Age",
-            f"{avg_age:.1f}"
-            if not np.isnan(avg_age)
-            else "N/A"
+            "Age Data Available",
+            f"{df[age_col].notna().sum():,}"
+            if age_col
+            else (f"{df[agecat_col].notna().sum():,}" if agecat_col else "N/A")
         )
 
     with c4:
