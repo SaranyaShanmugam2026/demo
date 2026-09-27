@@ -152,7 +152,11 @@ conds = [
     df["Inflammation Flag"].eq(0) & df["Low Albumin Flag"].eq(1),
     df["Inflammation Flag"].eq(1) & df["Low Albumin Flag"].eq(1),
 ]
-df["Inflammation + Albumin Group"] = np.select(conds,["Neither","Inflamed only","Low albumin only","Both"],default="Unknown").astype("string")
+df["Inflammation + Albumin Group"] = pd.Series("Unknown", index=df.index, dtype="string")
+df.loc[conds[0], "Inflammation + Albumin Group"] = "Neither"
+df.loc[conds[1], "Inflammation + Albumin Group"] = "Inflamed only"
+df.loc[conds[2], "Inflammation + Albumin Group"] = "Low albumin only"
+df.loc[conds[3], "Inflammation + Albumin Group"] = "Both"
 
 # Common clinical columns.
 biomarker_candidates = [
