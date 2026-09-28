@@ -1,6 +1,6 @@
 # =====================================================================
 #  Cardiac Failure Analytics Dashboard
-#  Team Python Pioneers | NumpyNinja Python Hackathon
+#  Team 2 - PythonPioneers | NumpyNinja Python Hackathon
 #
 #  Run:  streamlit run DashboardHeartfailure.py
 #  Data: Cardiac_Cleaned_Data.xlsb (or Cardiac_Cleaned_Data.csv) in the same folder
@@ -12,6 +12,8 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
+import html
+from scipy import stats
 
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
@@ -68,6 +70,59 @@ section[data-testid="stSidebar"] div[role="radiogroup"] p {{font-size:16px; font
 .member {{background:white;border-radius:14px;padding:18px;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,.06);border-top:5px solid #087F5B;}}
 .member .n {{font-size:17px;font-weight:700;color:#073B4C}} .member .r {{font-size:13px;color:#637B83}}
 .stTabs [data-baseweb="tab"] p {{font-size:15px;}}
+/* ---------- Reference-style blocks ---------- */
+.hero {{background:linear-gradient(120deg,#FFFFFF 0%,#EAF5F8 55%,#D6EFE6 100%);border-radius:22px;padding:40px 44px 0 44px;
+        box-shadow:0 6px 20px rgba(7,59,76,.10);overflow:hidden;position:relative;}}
+.hero .t1 {{font-size:64px;font-weight:900;color:#073B4C;line-height:1;letter-spacing:1px;margin:0;}}
+.hero .t2 {{font-size:46px;font-weight:900;color:#087F5B;line-height:1.1;margin:6px 0 0 0;}}
+.hero .sub {{font-size:18px;color:#0B5D6B;margin-top:14px;}}
+.hero .line {{height:4px;width:70%;background:linear-gradient(90deg,#073B4C,#087F5B);border-radius:4px;margin:18px 0 26px 0;}}
+.pill {{display:inline-block;background:#073B4C;color:white;font-size:26px;font-weight:800;padding:10px 30px;border-radius:14px;letter-spacing:1px;}}
+.meet {{color:#087F5B;font-weight:800;font-size:18px;letter-spacing:1px;margin:10px 0 18px 0;}}
+.tm {{display:flex;align-items:center;gap:14px;padding:6px 4px;}}
+.tm .av {{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;color:white;flex-shrink:0;}}
+.tm .nm {{font-size:18px;font-weight:800;}} .tm .rl {{font-size:14px;color:#637B83;border-top:3px solid;padding-top:4px;margin-top:4px;}}
+.herobar {{background:#073B4C;color:white;border-radius:18px 18px 0 0;display:flex;justify-content:space-around;padding:20px 10px;margin:28px -44px 0 -44px;font-size:20px;font-weight:600;}}
+.bigtitle {{text-align:center;font-size:46px;font-weight:900;color:#073B4C;letter-spacing:1px;margin:0;}}
+.bigtitle span {{display:inline-block;width:18%;height:3px;background:#073B4C;vertical-align:middle;margin:0 18px;border-radius:3px;}}
+.lead {{max-width:900px;margin:10px auto 22px auto;text-align:center;font-size:17px;color:#0B5D6B;font-weight:500;}}
+.spec {{background:#073B4C;color:white;border-radius:18px;padding:18px 18px 8px 18px;}}
+.spec h3 {{color:#7FD8BE;margin:0 0 10px 0;font-size:22px;}}
+.spec .row {{display:flex;gap:12px;align-items:center;border-top:1px solid rgba(255,255,255,.18);padding:10px 0;}}
+.spec .ic {{font-size:24px;width:34px;text-align:center;}} .spec .k {{font-weight:700;}} .spec .v {{opacity:.9;font-size:14px;}}
+.card-h {{text-align:center;}} .card-h .ic {{font-size:34px;}} .card-h .nm {{font-weight:900;font-size:15px;letter-spacing:.5px;margin:4px 0 6px 0;}}
+.card-h ul {{text-align:left;font-size:13px;color:#073B4C;padding-left:18px;margin:0;}}
+div[data-testid="stVerticalBlockBorderWrapper"] {{background:white;border-radius:16px !important;}}
+.checkbox {{background:#EAF5F8;border-left:6px solid #073B4C;border-radius:16px;padding:22px 26px;box-shadow:0 3px 12px rgba(0,0,0,.05);margin-bottom:18px;}}
+.checkbox b.h {{font-size:18px;color:#073B4C;}}
+.checkbox .it {{font-size:17px;color:#073B4C;margin:16px 0;}}
+.pagetitle {{font-size:44px;font-weight:800;color:#073B4C;margin:10px 0 18px 0;}}
+.dash-title {{font-size:52px;font-weight:800;color:#073B4C;margin:0 0 18px 0;}}
+.kpi2 {{background:white;border-radius:20px;padding:22px 24px;box-shadow:0 4px 16px rgba(7,59,76,.08);min-height:130px;}}
+.kpi2 .t {{font-size:16px;color:#1F2D33;}} .kpi2 .v {{font-size:40px;color:#073B4C;margin-top:10px;}}
+.sec {{font-size:32px;font-weight:700;color:#073B4C;margin:14px 0 6px 0;}}
+.sec .badge {{font-size:13px;vertical-align:middle;margin-left:8px;}}
+section[data-testid="stSidebar"] div[data-baseweb="select"] div,
+section[data-testid="stSidebar"] div[data-baseweb="select"] span,
+section[data-testid="stSidebar"] div[data-baseweb="select"] input,
+section[data-testid="stSidebar"] div[data-baseweb="select"] svg {{color:#073B4C !important; fill:#073B4C !important;}}
+section[data-testid="stSidebar"] div[data-baseweb="select"] > div {{background:white;border-radius:10px;}}
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] input,
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] button,
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] svg {{color:#073B4C !important; -webkit-text-fill-color:#073B4C !important; fill:#073B4C !important;}}
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] [role="group"] {{background:white !important;border-radius:10px;}}
+.qbox {{background:white;border:2px solid #087F5B;border-radius:12px;padding:12px 16px;margin:6px 0 12px 0;font-size:16px;color:#073B4C;}}
+</style>
+""", unsafe_allow_html=True)
+
+
+# ----------------------------- TEAM LOGO (top of the left menu, every page) -----------------------------
+# The logo image is stored inside this file (base64), so no extra image file is needed.
+LOGO_B64 = "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"
+st.markdown("""
+<style>
+.team-logo {margin:-70px 0 6px 0; text-align:left;}
+.team-logo img {width:110px; height:110px; border-radius:50%; box-shadow:0 3px 12px rgba(0,0,0,.35); border:3px solid rgba(255,255,255,.6);}
 </style>
 """, unsafe_allow_html=True)
 
@@ -83,7 +138,18 @@ def found(text):
 
 
 def todo(text):
-    st.markdown(f"<div class='todo'><b>What it means for the hospital:</b> {text}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='todo'><b>Action:</b> {text}</div>", unsafe_allow_html=True)
+
+
+def kpi2(icon, title, value):
+    """Plain white KPI card, diabetes-dashboard style."""
+    st.markdown(f"<div class='kpi2'><div class='t'>{icon} {title}</div><div class='v'>{value}</div></div>",
+                unsafe_allow_html=True)
+
+
+def section(title, kind):
+    """Tab heading with a small Descriptive / Prescriptive / Predictive label."""
+    st.markdown(f"<div class='sec'>{title} <span class='badge'>{kind}</span></div>", unsafe_allow_html=True)
 
 
 def badge(text):
@@ -105,7 +171,7 @@ def bar(x, y, title, colours, ytitle="% of patients", fmt=".1f", height=380):
 def two_outcomes(table, title):
     long = table.reset_index().melt(id_vars=table.index.name, var_name="Outcome", value_name="Percent")
     fig = px.bar(long, x=table.index.name, y="Percent", color="Outcome", barmode="group", text_auto=".1f",
-                 color_discrete_map={"Readmitted in 6 months": READMIT, "Died in 6 months": DEATH}, title=title)
+                 color_discrete_map={"Readmitted in 6 months": READMIT, "Died in 6 months": DEATH, "Came back": READMIT, "Died": DEATH}, title=title)
     fig.update_layout(yaxis_title="% of patients", xaxis_title="")
     return style(fig, 400)
 
@@ -159,18 +225,6 @@ except Exception as e:
     st.error(f"Could not load the cleaned data file: {e}")
     st.stop()
 
-# Descriptive demographic columns used in the Data Overview section.
-def find_col(names):
-    lookup = {str(c).strip().lower(): c for c in df.columns}
-    for name in names:
-        if name.lower() in lookup:
-            return lookup[name.lower()]
-    return None
-
-gender_col = find_col(["gender", "sex"])
-agecat_col = find_col(["agecat", "age_category"])
-bmi_col = find_col(["bmi"])
-
 # Model inputs (admission-time data only)
 DEATH_FEATURES = ["nyha_cardiac_function_classification", "killip_grade", "bnp_log", "troponin_log",
                   "nlr_log", "albumin", "hemoglobin", "sodium"]
@@ -210,11 +264,13 @@ def cv_probs(data, features, target, model_name, repeats=1):
 
 # ----------------------------- SIDEBAR -----------------------------
 with st.sidebar:
+    st.markdown(f"<div class='team-logo'><img src='data:image/png;base64,{LOGO_B64}' alt='Team logo'></div>",
+                unsafe_allow_html=True)
     st.markdown("<div style='text-align:center;font-size:48px'>❤️</div>"
-                "<h2 style='text-align:center;margin:0'>HeartFailure</h2>"
-                "<p style='text-align:center'>Team Python Pioneers</p>", unsafe_allow_html=True)
-    page = st.radio("NAVIGATION", ["🏠 Introduction", "📘 Data Overview", "🧹 Data Cleaning & Features",
-                                   "🩺 Interactive Clinical Insights", "🤖 Model Performance", "📌 Key Takeaways & Conclusion"],
+                "<h2 style='text-align:center;margin:0'>Cardiac Failure</h2>"
+                "<p style='text-align:center'>Team 2 • PythonPioneers</p>", unsafe_allow_html=True)
+    page = st.radio("NAVIGATION", ["🏠 Introduction", "📘 Data Overview", "🧹 Data Cleaning & Feature Engineering",
+                                   "📊 Insights", "🤖 Model Performance", "📌 Key Takeaways & Conclusion"],
                     label_visibility="collapsed")
 
 
@@ -222,529 +278,367 @@ with st.sidebar:
 # 1. INTRODUCTION
 # =====================================================================
 if page == "🏠 Introduction":
-    st.markdown("<div class='hdr'><h1>❤️ HeartFailure Clinical Explorer</h1><p>Heart-failure data analytics, outcomes and risk exploration</p></div>", unsafe_allow_html=True)
+    team = [("Aditi Mishra", "Team Lead", NAVY), ("Saranya Shanmugam", "Team Member", GREEN),
+            ("Sashi Laguduva", "Team Member", BLUE), ("Sudha Madhuri Basa", "Team Member", ALERT)]
+    members = "".join(
+        f"<div class='tm'><div class='av' style='background:{c}'>👤</div>"
+        f"<div><div class='nm' style='color:{c}'>{n}</div><div class='rl' style='border-color:{c}'>{r}</div></div></div>"
+        for n, r, c in team)
+    heart_svg = (
+        "<svg viewBox='0 0 220 200' width='300' style='position:absolute;right:50px;top:40px;opacity:.95'>"
+        "<defs><linearGradient id='hg' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#E86A7A'/>"
+        "<stop offset='1' stop-color='#B8324A'/></linearGradient></defs>"
+        "<path d='M110 185 C 30 125, 5 75, 40 38 C 70 8, 102 22, 110 50 C 118 22, 150 8, 180 38 C 215 75, 190 125, 110 185 Z' fill='url(#hg)'/>"
+        "<polyline points='20,105 70,105 85,80 100,135 118,55 135,120 148,105 200,105' fill='none' stroke='white' "
+        "stroke-width='7' stroke-linejoin='round' stroke-linecap='round'/></svg>")
+    st.markdown(
+        f"<div class='hero'>{heart_svg}"
+        "<p class='t1'>CARDIAC FAILURE</p>"
+        "<p class='t2'>HEART FAILURE DATASET</p>"
+        "<div class='sub'>Spotting high-risk heart failure patients on the day they are admitted</div>"
+        "<div class='line'></div>"
+        "<div style='text-align:center'><span class='pill'>TEAM 2: PYTHONPIONEERS</span>"
+        "<div class='meet'>—— MEET OUR TEAM ——</div></div>"
+        f"<div style='display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px'>{members}</div>"
+        "<div class='herobar'><span>⭐ Early Risk Detection</span><span>❤️ Better Decisions</span>"
+        "<span>👥 Healthier Hearts</span></div></div>", unsafe_allow_html=True)
 
-    intro_img = Path(__file__).parent / "heartfailure_intro.png"
-    if intro_img.exists():
-        st.image(str(intro_img), use_container_width=True)
-
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown("<div class='member'><div style='font-size:32px'>📌</div><div class='n'>Project</div><div class='r'>HeartFailure Clinical Explorer</div></div>", unsafe_allow_html=True)
-    with c2:
-        st.markdown("<div class='member'><div style='font-size:32px'>👥</div><div class='n'>Team</div><div class='r'>Python Pioneers</div></div>", unsafe_allow_html=True)
-    with c3:
-        st.markdown("<div class='member'><div style='font-size:32px'>🧑‍💻</div><div class='n'>Team Members</div><div class='r'>Aditi Mishra • Saranya Shanmugam • Sahi Laguduva • Sudha madhuri Basa</div></div>", unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class='section' style='margin-top:18px'>
-    <h3 style='color:#073B4C;margin-top:0'>Project Focus</h3>
-    <p style='font-size:17px;line-height:1.7;margin-bottom:0'>
-    The <b>HeartFailure Clinical Explorer</b> organizes patient, cardiac, laboratory, history, hospitalization and outcome information into an interactive analytics dashboard for understanding clinical patterns and mortality/readmission outcomes.
-    </p>
-    </div>
-    """, unsafe_allow_html=True)
 
 # =====================================================================
 # 2. DATA OVERVIEW
 # =====================================================================
 elif page == "📘 Data Overview":
-    st.markdown("<div class='hdr'><h1>📘 HeartFailure Data Overview</h1><p>Understanding the source dataset, the patient information it contains, and how our project uses it</p></div>", unsafe_allow_html=True)
+    st.markdown("<div class='bigtitle'><span></span>DATA OVERVIEW<span></span></div>"
+                "<div class='lead'>This dataset links 7 hospital tables for 2,008 heart failure patients: who they are, "
+                "how sick their heart is, their other diseases, 100+ blood tests, alertness, medicines, and what happened "
+                "to them up to 6 months after discharge. It lets us find who needs extra care and spot them early.</div>",
+                unsafe_allow_html=True)
 
-    overview_img = Path(__file__).parent / "heartfailure_data_overview.png"
-    if overview_img.exists():
-        st.image(str(overview_img), use_container_width=True)
+    years = pd.to_datetime(df["admission_date"])
+    spec_rows = [("👥", "Patients", f"{len(df):,} hospitalised heart failure patients"),
+                 ("🗂️", "Source", "7 hospital tables, linked by patient ID"),
+                 ("📅", "Admissions", f"{years.dt.year.min()} – {years.dt.year.max()}"),
+                 ("⏱️", "Follow-up", "28 days, 3 months, 6 months"),
+                 ("🧪", "Tests", "100+ blood tests and vital signs"),
+                 ("💊", "Medicines", "25 drugs given in hospital"),
+                 ("📋", "Final table", "2,008 rows × 210 columns")]
+    spec = "".join(f"<div class='row'><div class='ic'>{i}</div><div><div class='k'>{k}:</div><div class='v'>{v}</div></div></div>"
+                   for i, k, v in spec_rows)
 
-    project_patients = int(df["inpatient_number"].nunique()) if "inpatient_number" in df.columns else len(df)
-    st.markdown("""
-    <div class='section'>
-    <h3 style='color:#073B4C;margin-top:0'>What is the HeartFailure dataset?</h3>
-    <p style='font-size:16px;line-height:1.7'>
-    The <b>HeartFailure dataset</b> used in this project comes from the PhysioNet resource
-    <b>“Hospitalized patients with heart failure: integrating electronic healthcare records and external outcome data.”</b>
-    It is a retrospective hospital dataset containing <b>2,008 patients and 168 variables</b>. The patients were admitted with heart failure at
-    <b>Zigong Fourth People's Hospital, Sichuan, China</b>, and the source study covers <b>December 2016 through June 2019</b>.
-    </p>
-    <p style='font-size:16px;line-height:1.7;margin-bottom:0'>
-    The source data combines information recorded around hospitalization with follow-up information collected at
-    <b>28 days, 3 months and 6 months</b>. This allows the project to examine both the patient's clinical profile at admission and later outcomes such as mortality and readmission.
-    </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    c1, c2, c3, c4, c5 = st.columns(5)
-    with c1: kpi("👥", "Original patients", "2,008")
-    with c2: kpi("📋", "Original variables", "168")
-    with c3: kpi("🗂️", "Source tables integrated", "7")
-    with c4: kpi("👤", "Patients in project", f"{project_patients:,}")
-    with c5: kpi("📅", "Follow-up", "28d • 3m • 6m", size=20)
-
-    st.markdown("""
-    <div class='section'>
-    <h3 style='color:#073B4C;margin-top:0'>What does the dataset contain?</h3>
-    <p style='line-height:1.6'>The HeartFailure data covers several complementary clinical domains. Together, these domains provide a patient-level view rather than relying on a single biomarker or diagnosis field.</p>
-    <table style='width:100%;border-collapse:collapse;font-size:15px'>
-    <tr><th style='text-align:left;padding:11px;border-bottom:2px solid #D9E7EB'>Clinical domain</th><th style='text-align:left;padding:11px;border-bottom:2px solid #D9E7EB'>Examples in this project</th><th style='text-align:left;padding:11px;border-bottom:2px solid #D9E7EB'>Role in the analysis</th></tr>
-    <tr><td style='padding:11px'><b>Patient profile</b></td><td style='padding:11px'>Gender, age category, height, weight, BMI, occupation</td><td style='padding:11px'>Describes who is represented in the hospitalized cohort</td></tr>
-    <tr><td style='padding:11px'><b>Cardiac severity</b></td><td style='padding:11px'>NYHA, Killip, LVEF, LVEDD, E/A, valve measures</td><td style='padding:11px'>Characterizes heart-failure severity and cardiac function</td></tr>
-    <tr><td style='padding:11px'><b>Medical history</b></td><td style='padding:11px'>Prior myocardial infarction, vascular disease, diabetes, COPD and comorbidity measures</td><td style='padding:11px'>Adds prior disease burden and clinical context</td></tr>
-    <tr><td style='padding:11px'><b>Laboratory & biomarkers</b></td><td style='padding:11px'>BNP, troponin, creatinine, eGFR, urea, albumin, hemoglobin, electrolytes, inflammation markers</td><td style='padding:11px'>Represents cardiac injury, kidney function, nutrition, blood status and systemic stress</td></tr>
-    <tr><td style='padding:11px'><b>Hospital episode</b></td><td style='padding:11px'>Admission type, length of stay, respiratory support, oxygen use, discharge information</td><td style='padding:11px'>Describes the hospitalization and disposition</td></tr>
-    <tr><td style='padding:11px'><b>Medications</b></td><td style='padding:11px'>Medication indicators created from prescription records</td><td style='padding:11px'>Represents medication exposure during the hospital episode</td></tr>
-    <tr><td style='padding:11px'><b>Outcomes</b></td><td style='padding:11px'>In-hospital status, 28-day/3-month/6-month mortality and readmission, emergency return</td><td style='padding:11px'>Provides the endpoints examined by the descriptive and predictive analyses</td></tr>
-    </table>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # ----------------------------- DEMOGRAPHIC PROFILE -----------------------------
-    st.markdown("""
-    <div class='section'>
-    <h3 style='color:#073B4C;margin-top:0'>👤 Patient Demographic Profile</h3>
-    <p style='line-height:1.6;margin-bottom:10px'>This descriptive profile shows who is represented in the HeartFailure cohort before clinical severity and outcome analysis. It summarizes gender, source age category, BMI and occupation without treating these distributions as clinical recommendations.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    d1, d2 = st.columns(2)
-    with d1:
-        if gender_col and gender_col in df.columns:
-            g = df[gender_col].dropna().astype(str).str.strip().value_counts().reset_index()
-            g.columns = ["Gender", "Patients"]
-            fig = px.pie(g, names="Gender", values="Patients", hole=0.52, title="Gender distribution", color_discrete_sequence=[TEAL2, BLUE, GREEN])
-            fig.update_layout(height=320, legend_title="", margin=dict(t=55,l=10,r=10,b=10))
-            st.plotly_chart(style(fig, 320), width="stretch")
-        else:
-            st.info("Gender data is not available in the current dataset.")
-    with d2:
-        if agecat_col and agecat_col in df.columns:
-            a = df[agecat_col].dropna().astype(str).str.strip().value_counts().reset_index()
-            a.columns = ["Age category", "Patients"]
-            fig = px.bar(a, x="Age category", y="Patients", text_auto=True, title="Age-category distribution", color_discrete_sequence=[TEAL2])
-            fig.update_layout(height=320, xaxis_title="Age category", yaxis_title="Patients")
-            st.plotly_chart(style(fig, 320), width="stretch")
-        else:
-            st.info("Age-category data is not available in the current dataset.")
-
-    d3, d4 = st.columns(2)
-    with d3:
-        if bmi_col and bmi_col in df.columns:
-            bmi = pd.to_numeric(df[bmi_col], errors="coerce").dropna()
-            if len(bmi):
-                fig = px.histogram(x=bmi, nbins=25, title="BMI distribution", labels={"x":"BMI", "y":"Patients"}, color_discrete_sequence=[GREEN])
-                fig.update_layout(height=300, bargap=0.05)
-                st.plotly_chart(style(fig, 300), width="stretch")
-        else:
-            st.info("BMI data is not available in the current dataset.")
-    with d4:
-        if "occupation" in df.columns:
-            occ = df["occupation"].dropna().astype(str).str.strip().value_counts().head(8).reset_index()
-            occ.columns = ["Occupation", "Patients"]
-            fig = px.bar(occ, x="Patients", y="Occupation", orientation="h", text_auto=True, title="Most common occupation groups", color_discrete_sequence=[BLUE])
-            fig.update_layout(height=300, yaxis_title="", xaxis_title="Patients")
-            st.plotly_chart(style(fig, 300), width="stretch")
-        else:
-            st.info("Occupation data is not available in the current dataset.")
-
-    left, right = st.columns([1.05, 1])
+    left, right = st.columns([1, 3.2])
     with left:
-        st.markdown("""
-        <div class='section'>
-        <h3 style='color:#073B4C;margin-top:0'>From the source dataset to our project dataset</h3>
-        <div class='found'><b>1. Integrate</b><br>Seven source tables are linked through <b>inpatient_number</b> to create a patient-level analytical dataset.</div>
-        <div class='found'><b>2. Clean</b><br>Invalid or inconsistent values are reviewed, missingness is assessed, and variables are standardized for analysis.</div>
-        <div class='found'><b>3. Transform</b><br>Prescription records are converted into patient-level medication indicators and clinically interpretable features are engineered.</div>
-        <div class='found'><b>4. Analyze</b><br>Descriptive and prescriptive analyses examine severity, biomarkers, comorbidities, mortality, readmission and emergency-return patterns.</div>
-        <div class='todo'><b>5. Model</b><br>Logistic Regression and Random Forest are used as comparison models alongside the project's primary Artificial Neural Network analysis.</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with right:
-        out_cols = ["re_admission_within_28_days","re_admission_within_3_months","re_admission_within_6_months","death_within_28_days","death_within_3_months","death_within_6_months"]
-        available = [c for c in out_cols if c in df.columns]
-        if available:
-            rows=[]
-            labels={"re_admission_within_28_days":"Readmission — 28 days","re_admission_within_3_months":"Readmission — 3 months","re_admission_within_6_months":"Readmission — 6 months","death_within_28_days":"Mortality — 28 days","death_within_3_months":"Mortality — 3 months","death_within_6_months":"Mortality — 6 months"}
-            for c in available: rows.append((labels[c], float(pd.to_numeric(df[c], errors="coerce").mean()*100)))
-            odf=pd.DataFrame(rows,columns=["Outcome","Percent"])
-            fig=px.bar(odf,x="Percent",y="Outcome",orientation="h",text_auto=".1f",color_discrete_sequence=[TEAL2],title="Observed outcome rates in our project data")
-            fig.update_layout(xaxis_title="Patients (%)",yaxis_title="",height=360)
-            st.plotly_chart(style(fig),width="stretch")
-        st.markdown("""
-        <div class='section'>
-        <h4 style='color:#073B4C;margin-top:0'>Why this dataset fits the project</h4>
-        <p style='line-height:1.6;margin-bottom:8px'>The dataset links <b>admission severity</b>, <b>cardiac function</b>, <b>laboratory markers</b>, <b>comorbidity</b> and <b>follow-up outcomes</b>. That combination supports the project's central question: whether multiple patient characteristics can be combined to identify patterns associated with mortality and other adverse outcomes.</p>
-        <p style='line-height:1.6;margin-bottom:0'><b>Important:</b> this is a retrospective, single-center dataset. The source documentation notes that the data are aggregated at the hospitalization level and do not provide time-series measurements throughout the stay, so model results should be treated as analytical findings rather than clinically validated decision rules.</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"<div class='spec'><h3>Cardiac Failure<br>Dataset Specifications</h3>{spec}</div>", unsafe_allow_html=True)
 
-    st.info("Source: PhysioNet, HeartFailure dataset version 1.3. The source describes 2,008 patients, 168 variables, the December 2016–June 2019 study period, and follow-up at 28 days, 3 months and 6 months.")
-    st.link_button("Open the official PhysioNet HeartFailure dataset description", "https://www.physionet.org/content/heart-failure-zigong/1.3/")
+    def mini(fig):
+        fig.update_layout(template="plotly_white", height=150, margin=dict(t=5, l=5, r=5, b=5), showlegend=False,
+                          xaxis_title="", yaxis_title="", font_size=10)
+        fig.update_traces(selector=dict(type="pie"), textinfo="none")
+        return fig
+
+    cards = [
+        ("🧍", "DEMOGRAPHY", NAVY, ["Gender", "Age group", "Height, weight, BMI", "Occupation"],
+         lambda: px.bar(df["agecat"].value_counts().sort_index(), color_discrete_sequence=[NAVY])),
+        ("❤️", "CARDIAC", ALERT, ["NYHA class (symptoms)", "Killip grade (fluid/shock)", "Heart failure type", "Heart scan (LVEF)"],
+         lambda: px.bar(df["nyha_cardiac_function_classification"].value_counts().sort_index(), color_discrete_sequence=[ALERT])),
+        ("📜", "HISTORY", GREEN, ["Diabetes", "Kidney disease", "COPD, liver disease", "Comorbidity score"],
+         lambda: px.bar(pd.Series({"Kidney": df["moderate_to_severe_chronic_kidney_disease"].mean(),
+                                   "Diabetes": df["diabetes"].mean(),
+                                   "COPD": df["chronic_obstructive_pulmonary_disease"].mean()}) * 100,
+                        color_discrete_sequence=[GREEN])),
+        ("🏥", "HOSPITAL STAY", BLUE, ["Admission type", "Days in hospital", "Death: 28d / 3m / 6m", "Readmission: 28d / 3m / 6m"],
+         lambda: px.bar(pd.Series({"Came back": df["re_admission_within_6_months"].mean(),
+                                   "Died": df["death_within_6_months"].mean()}) * 100,
+                        color=["Came back", "Died"], color_discrete_sequence=[READMIT, DEATH])),
+        ("🧪", "LABS", TEAL2, ["BNP (heart strain)", "Troponin (heart damage)", "Kidney tests (eGFR)", "Blood count, salts"],
+         lambda: px.histogram(np.log10(df["brain_natriuretic_peptide"].dropna()), nbins=25, color_discrete_sequence=[TEAL2])),
+        ("🧠", "RESPONSIVENESS", "#6C4AB6", ["Eye opening", "Verbal response", "Movement", "GCS score (alertness)"],
+         lambda: px.pie(values=df["gcs_category"].value_counts().values, names=df["gcs_category"].value_counts().index,
+                        hole=.6, color_discrete_sequence=["#6C4AB6", "#B9A6E3", "#D8CCF1", "#EDE7F8"])),
+        ("💊", "PRESCRIPTIONS", "#E07A5F", ["25 medicines", "Water tablets", "Heart medicines", "Medicines per patient"],
+         lambda: px.histogram(df["total_drugs"], nbins=16, color_discrete_sequence=["#E07A5F"])),
+        ("✨", "DERIVED FEATURES", TEAL, ["BMI / BP groups", "Kidney stage, anemia level", "Warning flags", "NLR, comorbidity count"],
+         lambda: px.pie(values=df["bmi_category"].value_counts().values, names=df["bmi_category"].value_counts().index,
+                        hole=.6, color_discrete_sequence=[TEAL, "#6CC3B0", "#B7E4D8", NAVY])),
+    ]
+    with right:
+        for row in (cards[:4], cards[4:]):
+            cols = st.columns(4)
+            for col, (ic, nm, colr, items, chart) in zip(cols, row):
+                with col:
+                    with st.container(border=True):
+                        bullets = "".join(f"<li>{x}</li>" for x in items)
+                        st.markdown(f"<div class='card-h'><div class='ic'>{ic}</div>"
+                                    f"<div class='nm' style='color:{colr}'>{nm}</div><ul>{bullets}</ul></div>",
+                                    unsafe_allow_html=True)
+                        st.plotly_chart(mini(chart()), width="stretch", config={"displayModeBar": False})
+
 
 # =====================================================================
 # 3. DATA CLEANING & FEATURE ENGINEERING
 # =====================================================================
-elif page == "🧹 Data Cleaning & Features":
-    st.markdown("<div class='hdr'><h1>🧹 Data Cleaning & Feature Engineering</h1>"
-                "<p>From 7 messy tables to 1 trusted table (one row per patient)</p></div>", unsafe_allow_html=True)
+elif page == "🧹 Data Cleaning & Feature Engineering":
+    st.markdown("<div class='pagetitle'>🧹 Data Cleaning & Feature Engineering</div>", unsafe_allow_html=True)
+    steps = ["Removed a fake patient record and joined all 7 tables into one (one row per patient)",
+             "Set impossible values to blank: 0 kg weight, 0 pulse, BMI of 404, reversed blood pressure",
+             "Fixed wrong units: troponin, hematocrit and heart-scan values",
+             "Filled blanks only when the meaning was clear (blank breathing support = no ventilation)",
+             "Kept real gaps empty: missing lab tests were not invented",
+             "Changed medicines from many rows per patient to one row per patient",
+             "Renamed confusing lab columns and made yes/no columns 1/0"]
+    items = "".join(f"<div class='it'>✅ {x}</div>" for x in steps)
+    st.markdown(f"<div class='checkbox'><b class='h'>Data Cleaning Steps:</b>{items}</div>", unsafe_allow_html=True)
+
+    st.markdown("<h3 style='color:#073B4C'>🧠 Engineered Features</h3>", unsafe_allow_html=True)
+    feats = pd.DataFrame({
+        "Feature": ["bmi_category, bp_category", "ckd_stage, anemia_level", "bnp_elevated_flag, troponin_elevated_flag",
+                    "polypharmacy_flag, total_drugs", "comorbidity_count", "nlr (neutrophil ÷ lymphocyte)", "bnp_log, hs_crp_log"],
+        "Purpose": ["Compare patient groups easily", "Kidney and blood health in clear stages",
+                    "Quick yes/no warning signs (heart strain, heart damage)", "How many medicines each patient takes",
+                    "How much extra illness a patient carries", "Free inflammation marker from the routine blood count",
+                    "Stop a few extreme values from controlling the models"]})
+    st.dataframe(feats, hide_index=True, width="stretch")
+
+
+# =====================================================================
+# 4. INSIGHTS  (guided: Insight Area -> Marker -> Outcome)
+# =====================================================================
+elif page == "📊 Insights":
+    st.markdown("<div class='dash-title'>📊 Cardiac Failure Dashboard</div>", unsafe_allow_html=True)
 
     c1, c2, c3, c4 = st.columns(4)
-    with c1: kpi("🗂️", "Tables joined", "7 → 1")
-    with c2: kpi("🧽", "Cleaning steps", "27")
-    with c3: kpi("✨", "New features", "16")
-    with c4: kpi("🆔", "Duplicate patients", "0")
-
+    with c1: kpi2("🔁", "Came back (6 months)", pct(df["re_admission_within_6_months"].mean()))
+    with c2: kpi2("⚠️", "Died (6 months)", pct(df["death_within_6_months"].mean()))
+    with c3: kpi2("❤️", "Severe symptoms (NYHA 3–4)", pct((df["nyha_cardiac_function_classification"] >= 3).mean()))
+    with c4: kpi2("🧪", "Median BNP", f"{df['brain_natriuretic_peptide'].median():.0f}")
     st.write("")
-    left, right = st.columns(2)
-    with left:
-        st.markdown("""
-<div class='section'>
-<h4 style='color:#073B4C;margin-top:0'>🧹 What we cleaned</h4>
-<ul>
-<li><b>Removed impossible values:</b> a fake patient, 0 kg weight, 0 pulse, BMI of 404.</li>
-<li><b>Fixed wrong units:</b> troponin, hematocrit and heart-scan values.</li>
-<li><b>Filled blanks only when the meaning was clear:</b> blank breathing support = no ventilation.</li>
-<li><b>Kept real gaps empty:</b> we did not invent missing lab results.</li>
-<li><b>Medicines:</b> changed from many rows per patient to one row per patient.</li>
-<li><b>Joined all 7 tables</b> into one table: 2,008 patients.</li>
-</ul>
-</div>
-""", unsafe_allow_html=True)
-    with right:
-        st.markdown("<div class='section'><h4 style='color:#073B4C;margin-top:0'>✅ Why it mattered</h4>", unsafe_allow_html=True)
-        ba = pd.DataFrame({
-            "Example": ["Patients showing heart damage", "Highest BMI", "Rows per patient (medicines)", "Patients with E/A ratio"],
-            "Before": ["0.3% (wrong unit)", "404 (impossible)", "about 8", "393"],
-            "After": ["84% (as expected)", "39", "1", "536 (calculated)"]})
-        st.dataframe(ba, hide_index=True, width="stretch")
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section' style='padding:12px 18px'>Choose an area, a marker and an outcome. "
+                "Each insight follows <b>Marker → Evidence → Finding → What it means</b>.</div>", unsafe_allow_html=True)
 
-    st.markdown("""
-<div class='section'>
-<h4 style='color:#073B4C;margin-top:0'>✨ Feature engineering: new columns we added, and why</h4>
+    # ---------------- helper to cut a column into labelled groups ----------------
+    def cut(col, bins, labels):
+        return pd.cut(df[col], bins=bins, labels=labels, right=False)
 
-| New feature | Why we added it |
-|---|---|
-| **Groups** (BMI group, blood pressure group, kidney stage, anemia level) | Easier to compare and explain than raw numbers |
-| **Yes/No warning flags** (high BNP, high troponin, enlarged heart, many medicines) | Each one answers a simple clinical question |
-| **Number of other diseases** | One number for how much extra illness a patient carries |
-| **NLR** (neutrophil ÷ lymphocyte) | A free inflammation marker from the routine blood count |
-| **Log of skewed values** (BNP, troponin) | Stops a few extreme patients from controlling the model |
-</div>
-""", unsafe_allow_html=True)
+    def yes_no(mask, yes, no):
+        return pd.Series(np.where(mask, yes, no), index=df.index)
 
-    col = st.selectbox("See how one new feature splits the patients",
-                       ["bmi_category", "bp_category", "gcs_category", "medication_burden"],
-                       format_func=lambda c: {"bmi_category": "BMI group", "bp_category": "Blood pressure group",
-                                              "gcs_category": "Alertness group (GCS)", "medication_burden": "Medicine load"}[c])
-    counts = df[col].value_counts().rename_axis("Group").reset_index(name="Patients")
-    st.plotly_chart(bar(counts["Group"].astype(str), counts["Patients"], "", [TEAL2, BLUE, GREEN, NAVY, TEAL],
-                        ytitle="Patients", fmt=",", height=320), width="stretch")
+    def drug_any(cols):
+        return df[cols].sum(axis=1) > 0
 
+    nyha_grp = np.where(df["nyha_cardiac_function_classification"] == 4, "Symptoms at rest", "Symptoms on activity")
+    kil_grp = np.where(df["killip_grade"] >= 3, "fluid/shock", "no fluid")
 
-# =====================================================================
-# 4. INSIGHTS (descriptive + prescriptive + predictive in tabs)
-# =====================================================================
-elif page == "🩺 Interactive Clinical Insights":
-    st.markdown("<div class='hdr'><h1>🩺 Interactive Clinical Insights</h1><p>Select an analysis area, outcome and clinical marker to see the finding, evidence and interpretation.</p></div>", unsafe_allow_html=True)
+    # ---------------- all insight areas, markers, groups and plain-English meaning ----------------
+    # Each marker: (kind, function returning groups, "what it means" text)
+    AREAS = {
+        "❤️ Cardiac Biomarkers": ("Prescriptive", {
+            "BNP (heart strain)": (lambda: cut("brain_natriuretic_peptide", [0, 100, 500, 2000, 1e9],
+                                               ["Normal (<100)", "100–500", "500–2000", "Very high (≥2000)"]),
+                                   "BNP rises when the heart is stretched. Higher BNP means a more strained heart; "
+                                   "use it with the bedside exam to judge how sick the patient is."),
+            "Troponin (heart damage)": (lambda: cut("high_sensitivity_troponin", [0, 14.0001, 100, 1e9],
+                                                    ["Normal (≤14)", "Raised (14–100)", "Very high (>100)"]),
+                                        "Troponin shows heart muscle damage. Very high troponin points to acute injury "
+                                        "and a patient who needs closer monitoring."),
+        }),
+        "🫘 Kidney Function": ("Prescriptive", {
+            "Kidney stage (eGFR)": (lambda: df["ckd_stage"],
+                                    "Heart and kidneys pull each other down. eGFR below 45 (stage G3b or worse) should be "
+                                    "treated as high risk: careful water-tablet dosing, potassium checks, early follow-up."),
+            "Urea": (lambda: cut("urea", [0, 7.1, 15, 1e9], ["Normal (<7.1)", "Raised (7.1–15)", "High (≥15)"]),
+                     "Urea builds up when the kidneys are not clearing waste, often because the heart pumps poorly."),
+            "Chronic kidney disease (history)": (lambda: yes_no(df["moderate_to_severe_chronic_kidney_disease"] == 1, "Yes", "No"),
+                                                 "Known kidney disease adds long-term burden and limits which heart "
+                                                 "medicines can be used safely."),
+        }),
+        "🔥 Inflammation & Nutrition": ("Prescriptive", {
+            "NLR (routine blood count)": (lambda: pd.qcut(df["nlr"], 4, labels=["Lowest", "Low", "High", "Highest (≥8.7)"]),
+                                          "NLR is free from the routine blood count and available for almost every patient. "
+                                          "Flag NLR of 8.7 or more for closer monitoring."),
+            "White blood cells": (lambda: cut("white_blood_cell", [0, 4, 10, 1e9], ["Low (<4)", "Normal (4–10)", "High (>10)"]),
+                                  "A high white cell count suggests infection or stress, a common trigger of heart failure attacks."),
+            "hs-CRP (special test)": (lambda: cut("hs_crp", [0, 3, 1e9], ["Normal (<3)", "High (≥3)"]),
+                                      "hs-CRP measures inflammation but was not tested for about half of patients, "
+                                      "so NLR is the more practical marker."),
+            "Albumin (nutrition)": (lambda: cut("albumin", [0, 35, 1e9], ["Low (<35)", "Normal (≥35)"]),
+                                    "Low albumin reflects poor nutrition and inflammation; these patients recover less well."),
+        }),
+        "🛏️ Clinical Severity (Killip / NYHA)": ("Predictive", {
+            "Killip grade (fluid / shock)": (lambda: df["killip_grade"].map(lambda k: f"Killip {k}"),
+                                             "A 30-second bedside exam. Killip 1 patients are low risk; Killip 3–4 "
+                                             "(fluid in lungs or shock) need close monitoring."),
+            "NYHA class (symptoms)": (lambda: df["nyha_cardiac_function_classification"].map(lambda k: f"NYHA {k}"),
+                                      "NYHA shows how much symptoms limit daily life. Class 4 (symptoms at rest) carries the most risk."),
+            "Killip + NYHA together": (lambda: pd.Series(pd.Categorical([f"{n} + {k}" for n, k in zip(nyha_grp, kil_grp)], categories=[
+                                           "Symptoms on activity + no fluid", "Symptoms at rest + no fluid",
+                                           "Symptoms on activity + fluid/shock", "Symptoms at rest + fluid/shock"],
+                                           ordered=True), index=df.index),
+                                       "Using both bedside scores together separates patients even better than either alone."),
+            "Alertness (consciousness)": (lambda: yes_no(df["consciousness"] == "Clear", "Fully alert", "Not fully alert"),
+                                          "Patients who are not fully alert at admission are rare but very high risk."),
+        }),
+        "🕰️ Current Severity vs Prior History": ("Predictive", {
+            "Old heart attack": (lambda: yes_no(df["myocardial_infarction"] == 1, "Yes", "No"),
+                                 "Past diagnoses tell us little about who will die. Today's bedside condition matters more."),
+            "Past heart failure": (lambda: yes_no(df["congestive_heart_failure"] == 1, "Yes", "No"),
+                                   "Most patients (93%) already had heart failure before. Patients newly diagnosed at this admission "
+                                   "had more deaths, so a first-time diagnosis deserves extra attention."),
+            "Circulation problems (PVD)": (lambda: yes_no(df["peripheral_vascular_disease"] == 1, "Yes", "No"),
+                                           "Old vascular disease adds little once current severity is known."),
+            "Killip grade today (compare)": (lambda: df["killip_grade"].map(lambda k: f"Killip {k}"),
+                                             "Compare with the history markers: today's Killip grade shows a much bigger difference."),
+        }),
+        "🩸 Anemia": ("Prescriptive", {
+            "Anemia level (WHO)": (lambda: df["anemia_level"],
+                                   "Mild and moderate anemia add little risk, but severe anemia (Hb below 80) is a real "
+                                   "warning sign: flag it at admission and correct it."),
+            "Severe anemia vs rest": (lambda: pd.Series(np.where(df["anemia_level"].isna(), None,
+                                                                 np.where(df["anemia_level"] == "Severe", "Severe (<80)", "Not severe")),
+                                                        index=df.index),
+                                      "Severe anemia makes a weak heart work much harder to deliver oxygen."),
+        }),
+        "🩺 Blood Pressure": ("Prescriptive", {
+            "Blood pressure stage": (lambda: df["bp_stage"],
+                                     "Low BP (below 90) means the pump is failing: treat as possible shock. Higher BP patients "
+                                     "come back less often because their heart still has strength."),
+            "Pulse": (lambda: cut("pulse", [0, 60, 100.0001, 1e9], ["Slow (<60)", "Normal (60–100)", "Fast (>100)"]),
+                      "A fast pulse can mean the heart is struggling to keep up."),
+        }),
+        "🧂 Blood Gas & Salts": ("Prescriptive", {
+            "Sodium": (lambda: cut("sodium", [0, 135, 145.0001, 1e9], ["Low (<135)", "Normal (135–145)", "High (>145)"]),
+                       "Low sodium often reflects fluid overload; review fluids and water tablets."),
+            "Potassium": (lambda: cut("potassium", [0, 3.5, 5.0001, 1e9], ["Low (<3.5)", "Normal (3.5–5)", "High (>5)"]),
+                          "High potassium is common with weak kidneys and some heart medicines; monitor it closely."),
+            "Lactate (blood gas)": (lambda: cut("lactate", [0, 2, 1e9], ["Normal (<2)", "High (≥2)"]),
+                                    "High lactate means tissues are short of oxygen. Tested for about half of patients."),
+            "Bicarbonate (blood gas)": (lambda: cut("standard_bicarbonate", [0, 22, 1e9], ["Low (<22)", "Normal (≥22)"]),
+                                        "Low bicarbonate means acid build-up in the blood, a sign of a very sick patient."),
+        }),
+        "👥 Patient Profile": ("Descriptive", {
+            "Age group": (lambda: df["agecat"], "Heart failure risk in this group follows how sick patients are more than their age."),
+            "Gender": (lambda: df["gender"], "Women make up 58% of patients; outcomes differ little by gender."),
+            "BMI group": (lambda: df["bmi_category"].astype(object),
+                          "1 in 4 patients is underweight, a sign of frailty in long-term heart failure."),
+            "Number of other diseases": (lambda: df["comorbidity_count"].clip(upper=3).map(
+                                             {0: "0", 1: "1", 2: "2", 3: "3+"}),
+                                         "More other diseases means more burden and more returns to hospital."),
+        }),
+        "💊 Medicines": ("Descriptive", {
+            "ACE inhibitor / ARB": (lambda: yes_no(drug_any(["Benazepril hydrochloride tablet", "Valsartan Dispersible tablet"]), "Given", "Not given"),
+                                    "A key long-term heart medicine, given to only about 4 in 10 patients. Differences reflect "
+                                    "who was well enough to receive it, not proof the drug caused them."),
+            "Beta-blocker": (lambda: yes_no(drug_any(["Metoprolol Succinate Sustained-release tablet", "metoprolol tartrate injection"]), "Given", "Not given"),
+                             "Another key long-term medicine given to only about 4 in 10 patients."),
+            "Spironolactone": (lambda: yes_no(df["Spironolactone tablet"] == 1, "Given", "Not given"),
+                               "Given to most patients. Those not given it were often too sick or had kidney problems, so this "
+                               "shows a link, not proof of cause. It needs potassium checks."),
+            "Water tablet by drip (IV furosemide)": (lambda: yes_no(df["Furosemide injection"] == 1, "Given", "Not given"),
+                                                     "IV water tablets are used for more congested, sicker patients."),
+            "Number of medicines": (lambda: cut("total_drugs", [0, 5, 9, 13, 100], ["0–4", "5–8", "9–12", "13+"]),
+                                    "Patients on very few medicines had more deaths, likely because the sickest patients died or left "
+                                    "before full treatment. This shows a link, not that medicines alone made the difference."),
+        }),
+        "🤖 Predicted Risk (model)": ("Predictive", {
+            "Predicted risk group": (None,
+                                     "Our Logistic Regression model scores every patient using admission data only, tested on "
+                                     "patients it never saw. The highest-risk group should get closer monitoring and early follow-up."),
+        }),
+    }
 
-    st.markdown("""
-    <div class='section'>
-    <h3 style='color:#073B4C;margin-top:0'>🔍 How to use this page</h3>
-    <p>Choose <b>what clinical area you want to investigate</b>, then select the <b>marker</b> and the <b>outcome</b>. The dashboard updates the chart and the written finding automatically.</p>
-    <p style='margin-bottom:0;color:#637B83'>This makes each insight traceable: <b>Question → Evidence → Finding → Interpretation</b>.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    OUTCOMES = {"Readmission within 28 days": "re_admission_within_28_days",
+                "Readmission within 3 months": "re_admission_within_3_months",
+                "Readmission within 6 months": "re_admission_within_6_months",
+                "Death within 28 days": "death_within_28_days",
+                "Death within 3 months": "death_within_3_months",
+                "Death within 6 months": "death_within_6_months"}
 
-    areas = [
-        "🫘 Kidney Function",
-        "🩸 Inflammation & Nutrition",
-        "❤️ Cardiac Biomarkers",
-        "🩺 Current Clinical Severity",
-        "🧭 Current Severity vs Prior History",
-        "🫁 Blood Gas",
-        "🩸 Anemia",
-        "🔁 Readmission Patterns",
-    ]
-    area = st.selectbox("1. Select Insight Area", areas)
+    area = st.selectbox("1. Select Insight Area", list(AREAS.keys()))
+    kind, markers = AREAS[area]
+    marker = st.selectbox("2. Select Marker", list(markers.keys()))
+    out_label = st.selectbox("3. Select Outcome", list(OUTCOMES.keys()), index=5)
+    target = OUTCOMES[out_label]
+    is_death = target.startswith("death")
+    make_groups, meaning = markers[marker]
 
-    def outcome_series(label):
-        mapping = {
-            "28-Day Mortality": "death_within_28_days",
-            "6-Month Mortality": "death_within_6_months",
-            "6-Month Readmission": "re_admission_within_6_months",
-            "In-Hospital Mortality": "in_hospital_death",
-        }
-        return mapping[label]
-
-    # Build a safe in-hospital mortality proxy from the hospitalization outcome.
-    insight_df = df.copy()
-    if "in_hospital_death" not in insight_df.columns:
-        insight_df["in_hospital_death"] = (insight_df["outcome_during_hospitalization"].astype(str).str.strip().str.lower() == "dead").astype(int)
-
-    marker = None
-    outcome_label = None
-    target = None
-    table = None
-    chart_title = ""
-    finding = ""
-    interpretation = ""
-    talk_track = ""
-    p_text = None
-    chart = None
-
-    # ---------------- Kidney ----------------
-    if area == "🫘 Kidney Function":
-        marker_options = {
-            "eGFR": ("glomerular_filtration_rate", "Abnormal: eGFR < 60", lambda x: x < 60,
-                     {"6-Month Readmission": ("eGFR < 60", "eGFR ≥ 60", 44.8, 33.6, "p < 0.001"),
-                      "6-Month Mortality": ("eGFR < 60", "eGFR ≥ 60", 4.0, 2.0, "p = 0.014")} ),
-            "Creatinine": ("creatinine_enzymatic_method", "Abnormal: creatinine > 110", lambda x: x > 110,
-                     {"6-Month Readmission": ("Creatinine > 110", "Creatinine ≤ 110", 46.2, 35.2, "p < 0.001"),
-                      "6-Month Mortality": ("Creatinine > 110", "Creatinine ≤ 110", 4.9, 1.9, "p < 0.001")} ),
-            "Urea": ("urea", "Abnormal: urea > 8.3", lambda x: x > 8.3,
-                     {"6-Month Readmission": ("Urea > 8.3", "Urea ≤ 8.3", 42.6, 35.1, "p = 0.001"),
-                      "6-Month Mortality": ("Urea > 8.3", "Urea ≤ 8.3", 4.0, 1.7, "p = 0.003")} ),
-            "Cystatin C": ("cystatin", "Abnormal: cystatin > 0.98", lambda x: x > 0.98,
-                     {"6-Month Readmission": ("Cystatin > 0.98", "Cystatin ≤ 0.98", None, None, "p = 0.226"),
-                      "6-Month Mortality": ("Cystatin > 0.98", "Cystatin ≤ 0.98", None, None, "p = 0.056")} ),
-        }
-        marker = st.selectbox("2. Select Kidney Marker", list(marker_options.keys()))
-        outcome_label = st.selectbox("3. Select Outcome", ["6-Month Readmission", "6-Month Mortality"])
-        col, _, _, pmap = marker_options[marker]
-        target = outcome_series(outcome_label)
-        sub = insight_df.dropna(subset=[col, target]).copy()
-        high = pmap[outcome_label]
-        if high[2] is not None:
-            labels = [high[0], high[1]]
-            vals = [high[2], high[3]]
-            table = pd.DataFrame({"Group": labels, "Outcome rate (%)": vals})
-            chart = px.bar(table, x="Group", y="Outcome rate (%)", text_auto=".1f", color="Group",
-                           color_discrete_sequence=[DEATH if "Mortality" in outcome_label else READMIT, "#9FB7BE"],
-                           title=f"{marker}: {outcome_label}")
-            chart.update_layout(showlegend=False, yaxis_title="% of patients", xaxis_title="")
-            if vals[0] > vals[1]:
-                difference = vals[0] - vals[1]
-                finding = f"Patients with abnormal {marker.lower()} had a higher observed {outcome_label.lower()} rate: <b>{vals[0]:.1f}%</b> versus <b>{vals[1]:.1f}%</b>, a difference of <b>{difference:.1f} percentage points</b>."
-            else:
-                finding = f"The observed difference for abnormal {marker.lower()} was small in this analysis: <b>{vals[0]:.1f}%</b> versus <b>{vals[1]:.1f}%</b>."
-        else:
-            # Cystatin C is intentionally shown as a neutral comparison because the source analysis did not find a clear separation.
-            vals = sub.groupby((sub[col] > 0.98).map({True:"Cystatin > 0.98", False:"Cystatin ≤ 0.98"}), observed=False)[target].mean().mul(100)
-            table = vals.rename("Outcome rate (%)").reset_index().rename(columns={"index":"Group"})
-            chart = px.bar(table, x="Group", y="Outcome rate (%)", text_auto=".1f", color="Group",
-                           color_discrete_sequence=[TEAL2, "#9FB7BE"], title=f"{marker}: {outcome_label}")
-            chart.update_layout(showlegend=False, yaxis_title="% of patients", xaxis_title="")
-            finding = f"Cystatin C was above the normal limit in most patients, and the source analysis did not show a statistically clear separation for {outcome_label.lower()} (<b>{high[4]}</b>)."
-        p_text = high[4]
-        interpretation = "In this dataset, kidney-function markers provide useful context for longer-term outcomes, with creatinine showing the largest observed difference among the four markers examined. These are associations, not proof that the marker caused the outcome."
-        talk_track = f"I selected Kidney Function, then {marker}, then {outcome_label}. The chart compares patients above and below the study threshold. The key point is that the observed outcome rate is higher in the abnormal group for this marker, and the p-value shown comes directly from our prescriptive analysis."
-
-    # ---------------- Inflammation + albumin ----------------
-    elif area == "🩸 Inflammation & Nutrition":
-        marker = st.selectbox("2. Select Inflammation/Nutrition View", ["Inflammation + Albumin Group", "NLR", "WBC", "hs-CRP", "Albumin"])
-        outcome_label = st.selectbox("3. Select Outcome", ["28-Day Mortality", "6-Month Mortality", "6-Month Readmission"])
-        target = outcome_series(outcome_label)
-        q = insight_df.dropna(subset=["albumin"]).copy()
-        q["nlr_calc"] = q["neutrophil_count"] / q["lymphocyte_count"]
-        q["inflamed"] = ((q["hs_crp"] > 5) | (q["white_blood_cell"] > 10) | (q["nlr_calc"] > 6)).astype(int)
-        q["low_albumin"] = (q["albumin"] < 35).astype(int)
-        q["Group"] = np.select([ (q["inflamed"]==1)&(q["low_albumin"]==1), q["inflamed"]==1, q["low_albumin"]==1], ["Both", "Inflamed only", "Low albumin only"], default="Neither")
-        if marker == "Inflammation + Albumin Group":
-            table = q.groupby("Group", observed=True)[target].mean().mul(100).reindex(["Neither","Inflamed only","Low albumin only","Both"]).reset_index()
-            table.columns = ["Group","Outcome rate (%)"]
-            chart = px.bar(table, x="Group", y="Outcome rate (%)", text_auto=".1f", color="Group", color_discrete_sequence=["#9FB7BE", TEAL2, "#6CC3B0", DEATH], title=f"Inflammation + Albumin: {outcome_label}")
-            chart.update_layout(showlegend=False, yaxis_title="% of patients", xaxis_title="")
-            if outcome_label == "28-Day Mortality":
-                p_text = "p < 0.001"
-            elif outcome_label == "6-Month Mortality":
-                p_text = "p = 0.002 (Both vs Neither)"
-            else:
-                p_text = "Descriptive comparison"
-            both_rate = float(table.loc[table["Group"]=="Both","Outcome rate (%)"].iloc[0])
-            neither_rate = float(table.loc[table["Group"]=="Neither","Outcome rate (%)"].iloc[0])
-            finding = f"Patients with both inflammation and low albumin had an observed {outcome_label.lower()} rate of <b>{both_rate:.1f}%</b>, compared with <b>{neither_rate:.1f}%</b> in the Neither group."
-        else:
-            spec = {"NLR":"nlr_calc", "WBC":"white_blood_cell", "hs-CRP":"hs_crp", "Albumin":"albumin"}[marker]
-            q2=q.dropna(subset=[spec,target]).copy()
-            q2["Group"] = pd.qcut(q2[spec],4,labels=["Lowest","Low","High","Highest"] if marker != "Albumin" else ["Lowest","Low","High","Highest"], duplicates="drop")
-            table=q2.groupby("Group",observed=True)[target].mean().mul(100).reset_index(); table.columns=["Group","Outcome rate (%)"]
-            chart=px.bar(table,x="Group",y="Outcome rate (%)",text_auto=".1f",color="Group",color_discrete_sequence=RAMP,title=f"{marker}: {outcome_label} by quartile")
-            chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
-            p_text = "Source analysis: NLR/WBC showed stronger early-mortality signal than hs-CRP."
-            finding = f"Across quartiles, the observed {outcome_label.lower()} rate changes with {marker.lower()}. The chart lets you see whether the highest-marker group separates from the lowest group in this dataset."
-        interpretation = "The combined inflammation + albumin analysis showed the clearest early mortality separation when both conditions were present. NLR was also practical because it is derived from routine blood-count components and was available for most patients."
-        talk_track = f"I selected Inflammation & Nutrition, then {marker}, then {outcome_label}. I am not saying inflammation causes death; I am showing how the observed outcome rate differs across the groups created in our analysis."
-
-    # ---------------- BNP / cardiac biomarkers ----------------
-    elif area == "❤️ Cardiac Biomarkers":
-        marker = st.selectbox("2. Select Cardiac Marker", ["BNP", "Troponin"])
-        if marker == "BNP":
-            outcome_label = st.selectbox("3. Select Outcome", ["6-Month Mortality", "6-Month Readmission", "28-Day Mortality"])
-            q=insight_df.dropna(subset=["brain_natriuretic_peptide"]).copy()
-            q["BNP group"]="Capped 5000"
-            below=q["brain_natriuretic_peptide"]<5000
-            q.loc[below,"BNP group"]=pd.qcut(q.loc[below,"brain_natriuretic_peptide"],4,labels=["Q1 (lowest)","Q2","Q3","Q4"]).astype(str)
-            target=outcome_series(outcome_label)
-            table=q.groupby("BNP group",observed=True)[target].mean().mul(100).reindex(["Q1 (lowest)","Q2","Q3","Q4","Capped 5000"]).reset_index()
-            table.columns=["BNP group","Outcome rate (%)"]
-            chart=px.bar(table,x="BNP group",y="Outcome rate (%)",text_auto=".1f",color="BNP group",color_discrete_sequence=RAMP,title=f"BNP groups: {outcome_label}")
-            chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
-            if outcome_label=="6-Month Mortality":
-                p_text="BNP ≥ 708 vs < 708: p < 0.001"
-                finding="Six-month mortality increased across the higher BNP groups, reaching about <b>6.0%</b> in the capped 5000 group versus about <b>1.3%</b> in the two lowest groups."
-            elif outcome_label=="6-Month Readmission":
-                p_text="BNP ≥ 708 comparison: source analysis reported p = 0.24 for 6-month readmission"
-                finding="Readmission showed a weaker pattern than mortality: the rates varied across BNP groups but the source analysis did not find a statistically clear 6-month readmission association."
-            else:
-                p_text="Descriptive comparison"
-                finding="Higher BNP groups showed higher observed 28-day mortality in the source analysis."
-        else:
-            outcome_label=st.selectbox("3. Select Outcome",["28-Day Mortality","6-Month Mortality"])
-            target=outcome_series(outcome_label)
-            col="troponin_i" if "troponin_i" in insight_df.columns else next((c for c in insight_df.columns if "troponin" in c.lower()),None)
-            if col is None:
-                table=pd.DataFrame({"Status":["Troponin column not available in current dashboard data"],"Outcome rate (%)":[0]})
-                chart=px.bar(table,x="Status",y="Outcome rate (%)",title="Troponin")
-                finding="The current cleaned file does not expose a troponin column with a matching name, so this marker cannot be displayed safely."
-                p_text="Not available"
-            else:
-                q=insight_df.dropna(subset=[col,target]).copy(); q["Group"]=np.where(q[col]>q[col].median(),"Above median","At/below median")
-                table=q.groupby("Group")[target].mean().mul(100).reindex(["At/below median","Above median"]).reset_index(); table.columns=["Group","Outcome rate (%)"]
-                chart=px.bar(table,x="Group",y="Outcome rate (%)",text_auto=".1f",color="Group",color_discrete_sequence=["#9FB7BE",DEATH],title=f"Troponin: {outcome_label}")
-                chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
-                finding=f"Patients above the median troponin level had an observed {outcome_label.lower()} rate of <b>{table.iloc[1,1]:.1f}%</b> versus <b>{table.iloc[0,1]:.1f}%</b> at or below the median."
-                p_text="Descriptive comparison"
-        interpretation="BNP showed a clearer relationship with mortality than with readmission in the source analysis. Biomarkers should be interpreted together with clinical severity and other patient characteristics."
-        talk_track=f"I selected Cardiac Biomarkers, then {marker}, then {outcome_label}. The chart shows how the observed outcome changes across biomarker groups; this is an association from our dataset, not a standalone decision rule."
-
-    # ---------------- Current severity ----------------
-    elif area == "🩺 Current Clinical Severity":
-        marker = st.selectbox("2. Select Severity Measure", ["Killip Grade", "NYHA Class"])
-        outcome_label = st.selectbox("3. Select Outcome", ["In-Hospital Mortality", "28-Day Mortality", "6-Month Mortality"])
-        target=outcome_series(outcome_label)
-        col="killip_grade" if marker=="Killip Grade" else "nyha_cardiac_function_classification"
-        q=insight_df.dropna(subset=[col,target]).copy()
-        table=q.groupby(col)[target].mean().mul(100).reset_index(); table.columns=["Grade","Outcome rate (%)"]
-        table["Grade"]=table["Grade"].apply(lambda x:f"Killip {int(x)}" if marker=="Killip Grade" else f"NYHA {int(x)}")
-        chart=px.bar(table,x="Grade",y="Outcome rate (%)",text_auto=".1f",color="Outcome rate (%)",color_continuous_scale=["#EAF5F8",DEATH],title=f"{marker}: {outcome_label}")
-        chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
-        low=float(table.iloc[0,1]); high=float(table.iloc[-1,1])
-        finding=f"Observed {outcome_label.lower()} increased across the severity scale in this dataset, from <b>{low:.1f}%</b> in the lowest observed group to <b>{high:.1f}%</b> in the highest observed group."
-        p_text="Descriptive severity gradient"
-        interpretation="Current clinical severity measures describe how sick the patient is at admission. In the source analysis, Killip grade showed a particularly strong mortality gradient, making current severity an important part of risk review."
-        talk_track=f"I selected Current Clinical Severity, then {marker}, then {outcome_label}. The important point is the gradient: as the observed severity category increases, the outcome rate also changes. This is why the dashboard treats current severity as a major clinical signal."
-
-    # ---------------- Past vs current ----------------
-    elif area == "🧭 Current Severity vs Prior History":
-        marker = st.selectbox("2. Select Comparison", ["Prior Cardiac History", "Current Killip Grade"])
-        outcome_label = st.selectbox("3. Select Outcome", ["In-Hospital Mortality", "28-Day Mortality"])
-        target=outcome_series(outcome_label)
-        if marker=="Current Killip Grade":
-            q=insight_df.dropna(subset=["killip_grade",target]); table=q.groupby("killip_grade")[target].mean().mul(100).reset_index(); table.columns=["Group","Outcome rate (%)"]; table["Group"]=table["Group"].apply(lambda x:f"Killip {int(x)}")
-            chart=px.bar(table,x="Group",y="Outcome rate (%)",text_auto=".1f",color="Outcome rate (%)",color_continuous_scale=["#EAF5F8",DEATH],title=f"Current severity: {outcome_label}")
-            chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
-            finding=f"Current Killip severity showed a much wider observed mortality range than prior-history indicators: the highest Killip group had <b>{table.iloc[-1,1]:.1f}%</b> {outcome_label.lower()} compared with <b>{table.iloc[0,1]:.1f}%</b> in the lowest group."
-            p_text="Source model: severity ROC-AUC 0.87 for in-hospital death"
-        else:
-            histories={"Prior myocardial infarction":"myocardial_infarction","Prior heart failure":"congestive_heart_failure","Peripheral vascular disease":"peripheral_vascular_disease"}
-            h=st.selectbox("History item",list(histories.keys()))
-            col=histories[h]
-            q=insight_df.dropna(subset=[col,target]); table=q.groupby(col)[target].mean().mul(100).reset_index(); table["Group"]=table[col].map({0:"No history",1:"History present"}); table=table[["Group",target]].rename(columns={target:"Outcome rate (%)"})
-            chart=px.bar(table,x="Group",y="Outcome rate (%)",text_auto=".1f",color="Group",color_discrete_sequence=["#9FB7BE",TEAL2],title=f"{h}: {outcome_label}")
-            chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
-            finding=f"The observed difference associated with {h.lower()} is relatively small compared with the much larger gradient seen across current severity levels in the source analysis."
-            p_text="Source model: history-only ROC-AUC 0.49; severity-only ROC-AUC 0.87 for in-hospital death"
-        interpretation="The project analysis suggests that current clinical severity carries more discriminating information for early mortality than the selected prior-history indicators alone. Past history still provides context, but it should not be treated as a substitute for the patient's current presentation."
-        talk_track="This is the 'now versus past' analysis. I use it to explain that a diagnosis in the history section and the patient's current severity are different kinds of information. In our analysis, current severity separated mortality outcomes much more strongly."
-
-    # ---------------- Blood gas ----------------
-    elif area == "🫁 Blood Gas":
-        marker = st.selectbox("2. Select Blood-Gas Marker", ["Lactate", "pH", "Oxygen Saturation"])
-        outcome_label = st.selectbox("3. Select Outcome", ["In-Hospital Mortality"])
-        target=outcome_series(outcome_label)
-        configs={
-            "Lactate":("lactate",lambda x:x>2.2,"Lactate > 2.2","Lactate ≤ 2.2","p = 0.006"),
-            "pH":("ph",lambda x:x<7.35,"pH < 7.35","pH ≥ 7.35","p = 0.562"),
-            "Oxygen Saturation":("oxygen_saturation",lambda x:x<93,"O2 saturation < 93%","O2 saturation ≥ 93%","p = 0.575")}
-        col,fn,lab1,lab0,p_text=configs[marker]
-        q=insight_df.dropna(subset=[col,target]).copy(); q["Group"]=np.where(fn(q[col]),lab1,lab0)
-        table=q.groupby("Group")[target].mean().mul(100).reindex([lab0,lab1]).reset_index(); table.columns=["Group","Outcome rate (%)"]
-        chart=px.bar(table,x="Group",y="Outcome rate (%)",text_auto=".2f",color="Group",color_discrete_sequence=["#9FB7BE",DEATH],title=f"{marker}: {outcome_label}")
-        chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
-        finding=f"The source analysis found the clearest association for elevated lactate: the observed in-hospital death rate was <b>{table.iloc[1,1]:.2f}%</b> versus <b>{table.iloc[0,1]:.2f}%</b>, with <b>{p_text}</b>."
-        if marker != "Lactate":
-            finding=f"For {marker.lower()}, the observed difference in in-hospital mortality was small and the source analysis did not show a statistically clear association (<b>{p_text}</b>)."
-        interpretation="Blood-gas measures do not all behave the same way. Lactate showed the clearest signal in the source analysis, while pH and oxygen saturation did not show statistically clear differences at the selected thresholds."
-        talk_track=f"I selected Blood Gas, then {marker}. This is useful because it shows that not every abnormal-looking marker automatically carries the same outcome signal in our dataset. Lactate stood out more clearly than the other two measures."
-
-    # ---------------- Anemia ----------------
-    elif area == "🩸 Anemia":
-        marker = st.selectbox("2. Select Hemoglobin View", ["Anemia Severity"])
-        outcome_label = st.selectbox("3. Select Outcome", ["6-Month Mortality", "6-Month Readmission"])
-        target=outcome_series(outcome_label)
-        q=insight_df.dropna(subset=["anemia_level",target]).copy(); table=q.groupby("anemia_level",observed=True)[target].mean().mul(100).reset_index(); table.columns=["Anemia level","Outcome rate (%)"]
-        chart=px.bar(table,x="Anemia level",y="Outcome rate (%)",text_auto=".1f",color="Anemia level",color_discrete_sequence=RAMP,title=f"Anemia severity: {outcome_label}")
-        chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
-        finding=f"The observed {outcome_label.lower()} rate varies across anemia severity groups. In the source analysis, severe anemia showed the clearest mortality difference, while mild and moderate anemia were common but less separated."
-        p_text="Source analysis: severe anemia was associated with higher 6-month mortality"
-        interpretation="Anemia is common in the dataset, but the most notable mortality signal was concentrated in severe anemia. This supports treating anemia as one component of the broader clinical picture rather than as a standalone explanation."
-        talk_track=f"I selected Anemia and {outcome_label}. The key point is not that every degree of anemia has the same effect. The source analysis found the clearest mortality difference in the severe group."
-
-    # ---------------- Readmission ----------------
+    # ---------------- build the groups ----------------
+    if make_groups is None:   # predicted risk groups from the model
+        feats = DEATH_FEATURES if is_death else READMIT_FEATURES
+        with st.spinner("Scoring patients with the model..."):
+            prob = cv_probs(df, feats, target, "Logistic Regression", repeats=3)
+        groups = pd.Series(pd.qcut(prob, 5, labels=["Lowest", "Low", "Middle", "High", "Highest"]), index=df.index)
+        model_auc = roc_auc_score(df[target], prob)
     else:
-        marker = st.selectbox("2. Select Readmission Factor", ["NYHA Class", "Killip Grade", "CKD Stage"])
-        outcome_label = st.selectbox("3. Select Outcome", ["6-Month Readmission", "6-Month Mortality"])
-        target=outcome_series(outcome_label)
-        if marker=="NYHA Class": col="nyha_cardiac_function_classification"; prefix="NYHA"
-        elif marker=="Killip Grade": col="killip_grade"; prefix="Killip"
-        else: col="ckd_stage"; prefix="CKD"
-        q=insight_df.dropna(subset=[col,target]).copy()
-        table=q.groupby(col,observed=True)[target].mean().mul(100).reset_index(); table.columns=["Group","Outcome rate (%)"]
-        table["Group"]=table["Group"].apply(lambda x:f"{prefix} {x}" if prefix!="CKD" else str(x))
-        chart=px.bar(table,x="Group",y="Outcome rate (%)",text_auto=".1f",color="Outcome rate (%)",color_continuous_scale=["#EAF5F8",READMIT if "Readmission" in outcome_label else DEATH],title=f"{marker}: {outcome_label}")
-        chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
-        finding=f"The observed {outcome_label.lower()} rate changes across {marker.lower()} categories. This view is intended to show the pattern across groups rather than claim that the factor alone determines an individual patient's outcome."
-        p_text="Descriptive comparison"
-        interpretation="Readmission is a different outcome from mortality and is influenced by clinical status as well as factors beyond the hospital record. The dashboard therefore presents readmission patterns separately."
-        talk_track=f"I selected Readmission Patterns, then {marker}, then {outcome_label}. I use this to explain how the outcome varies across patient groups, while recognizing that readmission is influenced by more than clinical severity alone."
+        groups = make_groups()
+        model_auc = None
 
-    # ---------------- Render selected insight ----------------
-    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-    left, right = st.columns([1.45, 1], gap="large")
+    data = pd.DataFrame({"group": groups, "y": df[target]}).dropna()
+    if isinstance(groups.dtype, pd.CategoricalDtype):
+        order = [c for c in groups.cat.categories if c in set(data["group"])]
+    else:
+        order = sorted(data["group"].unique(), key=str)
+    summary = data.groupby("group", observed=True)["y"].agg(["mean", "size"]).reindex(order)
+    summary["rate"] = summary["mean"] * 100
+
+    # ---------------- layout: Donut | Chart | Finding ----------------
+    left, mid, right = st.columns([0.9, 1.7, 1.3])
+
     with left:
-        if chart is not None:
-            st.plotly_chart(style(chart, 430), width="stretch")
+        yes = df[target].mean() * 100
+        word = "Died" if is_death else "Came back"
+        fig = go.Figure(go.Pie(values=[yes, 100 - yes], labels=[word, "Did not"], hole=0.68, sort=False,
+                               marker=dict(colors=[DEATH if is_death else READMIT, "#E3ECEF"]), textinfo="none"))
+        fig.update_layout(title=dict(text="All 2,008 patients", font=dict(size=14, color=NAVY)), height=300,
+                          margin=dict(t=40, l=5, r=5, b=5), showlegend=True,
+                          legend=dict(orientation="h", y=-0.05, x=0.5, xanchor="center"),
+                          annotations=[dict(text=f"<b>{yes:.1f}%</b><br>{word.lower()}", x=0.5, y=0.5,
+                                            showarrow=False, font=dict(size=18, color=NAVY))])
+        st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+        st.caption(out_label)
+
+    with mid:
+        accent = DEATH if is_death else READMIT
+        if len(summary) > 2:
+            cols_used = (RAMP * 3)[:len(summary)]
+        else:   # two groups: highlight the higher-risk one
+            cols_used = [accent if r == summary["rate"].max() else "#9FB7BE" for r in summary["rate"]]
+        fig = px.bar(x=[str(i) for i in summary.index], y=summary["rate"], text_auto=".1f",
+                     color=[str(i) for i in summary.index], color_discrete_sequence=cols_used,
+                     title=f"{marker}: {out_label}")
+        fig.update_traces(customdata=summary["size"], hovertemplate="%{x}<br>%{y:.1f}%<br>%{customdata} patients<extra></extra>")
+        fig.update_layout(showlegend=False, xaxis_title="", yaxis_title="% of patients")
+        st.plotly_chart(style(fig, 360), width="stretch")
+
     with right:
-        st.markdown("<div class='section'>", unsafe_allow_html=True)
-        st.markdown(f"<span class='badge'>{area.replace('🫘 ','').replace('🩸 ','').replace('❤️ ','').replace('🩺 ','').replace('🧭 ','').replace('🫁 ','').replace('🔁 ','')}</span>", unsafe_allow_html=True)
-        st.markdown("### 🔎 Finding")
-        st.markdown(f"{finding}", unsafe_allow_html=True)
-        if p_text:
-            st.markdown(f"<p><b>Evidence:</b> {p_text}</p>", unsafe_allow_html=True)
-        st.markdown(f"<div class='found'><b>What this means:</b> {interpretation}</div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with st.expander("🗣️ How to explain this in your presentation"):
-        st.write(talk_track)
-        st.caption("Tip: explain the selected group, the observed outcome difference, and what the statistical evidence says. Avoid describing an association as proof of causation.")
-
-    st.markdown("""
-    <div class='section'>
-    <h3 style='color:#073B4C;margin-top:0'>⭐ Overall project takeaways</h3>
-    <div class='found'><b>1. Current severity matters.</b> NYHA and especially Killip provide a direct view of how sick the patient is at admission, and the analysis shows clear mortality gradients across severity levels.</div>
-    <div class='found'><b>2. Kidney function adds important context.</b> eGFR, creatinine and urea were associated with higher observed 6-month mortality/readmission, with creatinine showing the largest differences among the kidney markers tested.</div>
-    <div class='found'><b>3. Biomarkers are outcome-specific.</b> BNP showed a clearer relationship with mortality than with readmission, while NLR showed a useful early-mortality signal.</div>
-    <div class='found'><b>4. Readmission and mortality should be examined separately.</b> Returning to hospital is influenced by clinical and non-clinical factors, so the same marker does not necessarily behave the same way for both outcomes.</div>
-    <div class='found'><b>5. The ANN belongs at the end of the story.</b> The predictive model combines multiple patient characteristics into an analytical risk estimate after the descriptive and clinical patterns have been understood.</div>
-    </div>
-    """, unsafe_allow_html=True)
+        badge(kind)
+        top, low = summary["rate"].idxmax(), summary["rate"].idxmin()
+        tested = len(data)
+        # Evidence: chi-square test across the groups (predicted risk uses ROC-AUC)
+        if model_auc is not None:
+            evidence = f"Model ROC-AUC {model_auc:.2f} on unseen patients (0.5 = coin toss)"
+        elif summary["size"].min() > 0 and data["y"].nunique() == 2 and len(summary) > 1:
+            _, p, _, _ = stats.chi2_contingency(pd.crosstab(data["group"], data["y"]))
+            evidence = f"Chi-square test, p {'< 0.001' if p < 0.001 else '= ' + format(p, '.3f')} " \
+                       f"({'significant' if p < 0.05 else 'not significant'})"
+        else:
+            evidence = "Descriptive comparison"
+        small = summary[summary["size"] < 30]
+        st.markdown(
+            f"<div class='sec' style='font-size:26px'>🔎 Finding</div>"
+            f"<p style='font-size:16px;color:#073B4C'>Patients in <b>{html.escape(str(top))}</b> had the highest rate: "
+            f"<b>{summary.loc[top, 'rate']:.1f}%</b> ({int(summary.loc[top, 'size'])} patients), "
+            f"vs <b>{summary.loc[low, 'rate']:.1f}%</b> in <b>{html.escape(str(low))}</b>. "
+            f"Average for all patients: {df[target].mean()*100:.1f}%.</p>"
+            f"<p style='font-size:14px;color:#637B83'><b>Evidence:</b> {evidence}. "
+            f"Patients with this marker: {tested:,} of {len(df):,}."
+            + (f" Small groups (under 30 patients): {html.escape(', '.join(map(str, small.index)))}." if len(small) else "")
+            + "</p>", unsafe_allow_html=True)
+        st.markdown(f"<div class='todo'><b>What this means:</b> {meaning}</div>", unsafe_allow_html=True)
 
 
 # =====================================================================
 # 5. MODEL PERFORMANCE
 # =====================================================================
 elif page == "🤖 Model Performance":
-    st.markdown("<div class='hdr'><h1>🤖 Model Performance</h1>"
-                "<p>How well our models find high-risk patients, tested on patients they had never seen</p></div>",
-                unsafe_allow_html=True)
+    st.markdown("<div class='pagetitle'>🤖 Model Performance</div>", unsafe_allow_html=True)
 
     st.markdown("""
 <div class='section'>
@@ -764,7 +658,8 @@ patients and tested on the other 1/5, five times over (5-fold cross-validation),
     targets = {"6-month death": ("death_within_6_months", DEATH_FEATURES, df),
                "28-day death": ("death_within_28_days", DEATH_FEATURES, df),
                "6-month readmission": ("re_admission_within_6_months", READMIT_FEATURES,
-                                       df[(df["outcome_during_hospitalization"] != "Dead") & (df["death_within_6_months"] == 0)].reset_index(drop=True))}
+                                       df[(df["outcome_during_hospitalization"] != "Dead") &
+                                          (df["death_within_6_months"] == 0)].reset_index(drop=True))}
     choice = st.selectbox("Outcome to predict", list(targets.keys()))
     target, feats, data = targets[choice]
     y = data[target].values
@@ -819,19 +714,31 @@ patients and tested on the other 1/5, five times over (5-fold cross-validation),
           f"So we chose <b>Logistic Regression</b>: it catches the most high-risk patients and is easy to explain to doctors.")
     todo("A flagged patient is not a diagnosis. Flags point the team to who needs a closer look first.")
 
+    # ---------------- Key models at a glance (scores calculated live, on unseen patients) ----------------
     st.subheader("Our key models at a glance")
+    alive6 = targets["6-month readmission"][2]
+    glance = [
+        ("Death within 28 days", "Bedside check only (Killip + NYHA)",
+         df, ["killip_grade", "nyha_cardiac_function_classification"], "death_within_28_days", "Very good with just a 30-second exam"),
+        ("Death within 6 months", "Bedside check + 6 routine blood tests",
+         df, DEATH_FEATURES, "death_within_6_months", "Best overall death model"),
+        ("Death within 28 days", "NLR from the routine blood count",
+         df, ["nlr_log"], "death_within_28_days", "A free test with useful signal"),
+        ("Came back within 6 months", "21 admission measures",
+         alive6, READMIT_FEATURES, "re_admission_within_6_months", "Weak, but top-risk group returns 2x as often"),
+    ]
     summary = pd.DataFrame({
-        "What we predicted": ["Death within 28 days", "Death within 6 months", "Death within 28 days", "Came back within 6 months"],
-        "Using": ["Bedside check only (Killip + NYHA)", "Bedside check + 6 routine blood tests",
-                  "NLR from the routine blood count", "21 admission measures"],
-        "ROC-AUC": ["0.85", "0.81", "0.70", "0.61"],
-        "In simple words": ["Excellent with just a 30-second exam", "Best overall death model", "A free test with useful signal",
-                            "Weak, but top-risk group returns 2x as often"]})
+        "What we predicted": [g[0] for g in glance],
+        "Using": [g[1] for g in glance],
+        "ROC-AUC": [f"{roc_auc_score(g[2][g[4]], cv_probs(g[2], g[3], g[4], 'Logistic Regression', repeats=3)):.2f}"
+                    for g in glance],
+        "In simple words": [g[5] for g in glance]})
     st.dataframe(summary, hide_index=True, width="stretch")
 
     # ---------------- Patient risk check ----------------
     st.subheader("🩺 Try it: Patient Risk Check")
-    st.caption("Uses the 6-month death model. It supports the doctor's judgement; it does not replace it.")
+    st.caption("Uses the 6-month death model. Pick a real patient or enter a new one. "
+               "It supports the doctor's judgement; it does not replace it.")
 
     @st.cache_resource
     def final_model():
@@ -839,41 +746,81 @@ patients and tested on the other 1/5, five times over (5-fold cross-validation),
         prob = cv_probs(df, DEATH_FEATURES, "death_within_6_months", "Logistic Regression", repeats=3)
         edges = np.quantile(prob, [0.2, 0.4, 0.6, 0.8])
         rate = pd.Series(df["death_within_6_months"].values).groupby(np.digitize(prob, edges)).mean() * 100
-        return model, edges, rate
+        return model, edges, rate, prob
 
-    model, edges, death_rate = final_model()
-    with st.form("patient"):
+    model, edges, death_rate, cv_prob = final_model()
+
+    ids = ["New patient (enter values)"] + sorted(df["inpatient_number"].astype(int).tolist())
+    pid = st.selectbox("Patient ID", ids, help="Pick a patient from our data to fill in their admission values, "
+                                                "or choose 'New patient' and type the values.")
+    med = df[["brain_natriuretic_peptide", "high_sensitivity_troponin", "neutrophil_count", "lymphocyte_count",
+              "albumin", "hemoglobin", "sodium", "glomerular_filtration_rate", "systolic_blood_pressure"]].median()
+    if pid == ids[0]:
+        d = {"nyha": 3, "killip": 2, "bnp": 750.0, "trop": 55.0, "neut": 5.0, "lymph": 1.0,
+             "alb": 37.0, "hb": 115.0, "na": 139.0, "egfr": 60.0, "sbp": 130.0}
+        row_i = None
+    else:
+        row_i = df.index[df["inpatient_number"].astype(int) == pid][0]
+        r = df.loc[row_i]
+
+        def val(col, lo, hi):
+            v = r[col] if pd.notna(r[col]) else med[col]
+            return float(min(max(v, lo), hi))
+
+        d = {"nyha": int(r["nyha_cardiac_function_classification"]), "killip": int(r["killip_grade"]),
+             "bnp": val("brain_natriuretic_peptide", 10, 5000), "trop": val("high_sensitivity_troponin", 0, 50000),
+             "neut": val("neutrophil_count", 0.1, 50), "lymph": val("lymphocyte_count", 0.05, 20),
+             "alb": val("albumin", 10, 60), "hb": val("hemoglobin", 30, 200), "na": val("sodium", 110, 160),
+             "egfr": val("glomerular_filtration_rate", 1, 200), "sbp": val("systolic_blood_pressure", 50, 250)}
+
+    with st.form(f"patient_{pid}"):
         c1, c2, c3, c4 = st.columns(4)
-        nyha = c1.selectbox("NYHA class (symptoms)", [2, 3, 4], index=1)
-        killip = c2.selectbox("Killip grade (fluid / shock)", [1, 2, 3, 4], index=1)
-        bnp = c3.number_input("BNP (pg/mL)", 10.0, 5000.0, 750.0)
-        trop = c4.number_input("Troponin (pg/mL)", 0.0, 50000.0, 55.0)
+        nyha = c1.selectbox("NYHA class (symptoms)", [1, 2, 3, 4], index=[1, 2, 3, 4].index(d["nyha"]))
+        killip = c2.selectbox("Killip grade (fluid / shock)", [1, 2, 3, 4], index=d["killip"] - 1)
+        bnp = c3.number_input("BNP (pg/mL)", 10.0, 5000.0, d["bnp"])
+        trop = c4.number_input("Troponin (pg/mL)", 0.0, 50000.0, d["trop"])
         c5, c6, c7, c8 = st.columns(4)
-        neut = c5.number_input("Neutrophils (x10^9/L)", 0.1, 50.0, 5.0)
-        lymph = c6.number_input("Lymphocytes (x10^9/L)", 0.05, 20.0, 1.0)
-        alb = c7.number_input("Albumin (g/L)", 10.0, 60.0, 37.0)
-        hbv = c8.number_input("Hemoglobin (g/L)", 30.0, 200.0, 115.0)
+        neut = c5.number_input("Neutrophils (x10^9/L)", 0.1, 50.0, d["neut"])
+        lymph = c6.number_input("Lymphocytes (x10^9/L)", 0.05, 20.0, d["lymph"])
+        alb = c7.number_input("Albumin (g/L)", 10.0, 60.0, d["alb"])
+        hbv = c8.number_input("Hemoglobin (g/L)", 30.0, 200.0, d["hb"])
         c9, c10, c11, _ = st.columns(4)
-        na = c9.number_input("Sodium (mmol/L)", 110.0, 160.0, 139.0)
-        egfr = c10.number_input("eGFR (kidney)", 1.0, 200.0, 60.0)
-        sbp_in = c11.number_input("Systolic BP (mmHg)", 50.0, 250.0, 130.0)
+        na = c9.number_input("Sodium (mmol/L)", 110.0, 160.0, d["na"])
+        egfr = c10.number_input("eGFR (kidney)", 1.0, 200.0, d["egfr"])
+        sbp_in = c11.number_input("Systolic BP (mmHg)", 50.0, 250.0, d["sbp"])
         submitted = st.form_submit_button("Check risk", type="primary")
 
     if submitted:
         nlr_val = neut / lymph
-        x = pd.DataFrame([[nyha, killip, np.log1p(bnp), np.log1p(trop), np.log(nlr_val), alb, hbv, na]], columns=DEATH_FEATURES)
-        grp = int(np.digitize(model.predict_proba(x)[0, 1], edges))
+        model_inputs = {"nyha": nyha, "killip": killip, "bnp": bnp, "trop": trop, "neut": neut, "lymph": lymph,
+                        "alb": alb, "hb": hbv, "na": na}
+        if row_i is not None and all(model_inputs[k] == d[k] for k in model_inputs):
+            # Existing patient, model values unchanged: use the risk from a model that never saw this patient
+            score = cv_prob[row_i]
+        else:
+            x = pd.DataFrame([[nyha, killip, np.log1p(bnp), np.log1p(trop), np.log(nlr_val), alb, hbv, na]],
+                             columns=DEATH_FEATURES)
+            score = model.predict_proba(x)[0, 1]
+        grp = int(np.digitize(score, edges))
         names = ["Lowest", "Low", "Middle", "High", "Highest"]
         colours = [RAMP[0], RAMP[1], "#F2C14E", "#E07A5F", ALERT]
         left, right = st.columns([1, 1.3])
         with left:
             st.markdown(f"### Risk group: <span style='color:{colours[grp]}'>{names[grp]}</span>", unsafe_allow_html=True)
             kpi("⚠️", "Similar patients who died within 6 months", f"{death_rate.iloc[grp]:.1f}%")
+            if row_i is not None:
+                died = df.loc[row_i, "death_within_6_months"] == 1
+                back = df.loc[row_i, "re_admission_within_6_months"] == 1
+                st.markdown(f"<div class='found'><b>What really happened to patient {pid}:</b><br>"
+                            f"Died within 6 months: <b>{'Yes' if died else 'No'}</b><br>"
+                            f"Came back within 6 months: <b>{'Yes' if back else 'No'}</b></div>",
+                            unsafe_allow_html=True)
             flags = [("Fluid in lungs or shock (Killip 3-4)", killip >= 3), ("Symptoms at rest (NYHA IV)", nyha == 4),
                      ("Low blood pressure (below 90)", sbp_in < 90), ("Weak kidneys (eGFR below 45)", egfr < 45),
                      ("Severe anemia (hemoglobin below 80)", hbv < 80), (f"High NLR ({nlr_val:.1f})", nlr_val >= 8.7)]
             shown = [n for n, on in flags if on]
             st.write("")
+            st.markdown("**Warning signs:**")
             for n in shown:
                 st.error(n)
             if not shown:
@@ -887,59 +834,19 @@ patients and tested on the other 1/5, five times over (5-fold cross-validation),
 # 6. KEY TAKEAWAYS & CONCLUSION
 # =====================================================================
 elif page == "📌 Key Takeaways & Conclusion":
-    st.markdown("<div class='hdr'><h1>📌 Key Takeaways & Conclusion</h1><p>What the HeartFailure analysis tells us</p></div>", unsafe_allow_html=True)
+    st.markdown("<div class='pagetitle'>📌 Key Takeaways</div>", unsafe_allow_html=True)
+    take = ["Coming back to hospital (38.5% in 6 months) is a much bigger problem than death (2.8%)",
+            "How sick the patient is today matters most: 27% of Killip 4 patients died within 6 months vs 0.8% of Killip 1",
+            "Heart and organ warning signs: very high troponin, weak kidneys, high potassium, severe anemia and low sodium",
+            "Simple routine tests work best: NLR is free and available for 99% of patients, while hs-CRP and blood gas were missing for half",
+            "Only about 4 in 10 patients get the key long-term heart medicines (ACE inhibitor/ARB, beta-blocker)",
+            "Our simple, explainable model (Logistic Regression) catches 70% of 6-month deaths; the neural network caught none"]
+    items = "".join(f"<div class='it'>✅ {x}</div>" for x in take)
+    st.markdown(f"<div class='checkbox'><b class='h'>Key Clinical Findings:</b>{items}</div>", unsafe_allow_html=True)
 
-    left, right = st.columns(2)
-    with left:
-        st.markdown("""
-        <div class='section'>
-        <h4 style='color:#073B4C;margin-top:0'>⭐ Key Takeaways</h4>
-        <ul>
-        <li><b>The dataset supports a complete hospital-episode view:</b> demographic, cardiac, laboratory, history, treatment and outcome information can be examined together at the patient level.</li>
-        <li><b>Current severity is important:</b> NYHA and Killip provide admission-level measures that can be compared with mortality and readmission outcomes.</li>
-        <li><b>Multiple organ systems matter:</b> kidney function, blood markers, inflammation, nutrition and cardiac biomarkers provide complementary signals rather than a single explanation.</li>
-        <li><b>Readmission and mortality are different outcomes:</b> a patient may have a higher observed likelihood of returning without having the same mortality pattern, so they should be analyzed separately.</li>
-        <li><b>Feature engineering improves interpretation:</b> clinically meaningful groups and warning flags make complex laboratory and clinical values easier to explore.</li>
-        <li><b>Machine learning adds a patient-level risk view:</b> Logistic Regression, Random Forest and ANN can be compared using held-out/cross-validated predictions and multiple performance metrics.</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
-    with right:
-        st.markdown("""
-        <div class='section'>
-        <h4 style='color:#073B4C;margin-top:0'>🏥 How the dashboard can be used</h4>
-        <ul>
-        <li><b>At admission:</b> review current clinical severity together with prior history, comorbidities and baseline laboratory results.</li>
-        <li><b>During analysis:</b> use the descriptive views to understand which patient groups and biomarkers are associated with different outcomes.</li>
-        <li><b>For risk review:</b> use model probabilities as an analytical flag for closer review, not as a diagnosis or automatic treatment decision.</li>
-        <li><b>For follow-up planning:</b> examine readmission patterns separately from mortality because they represent different patient outcomes.</li>
-        <li><b>For quality improvement:</b> compare observed patterns across patient groups and identify areas that may deserve further clinical investigation.</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class='section'>
-    <h4 style='color:#073B4C;margin-top:0'>🏁 Conclusion</h4>
-    <p>
-    The <b>HeartFailure Clinical Explorer</b> brings the project workflow into one place: the source hospital records are integrated and cleaned, clinically meaningful features are created, descriptive and outcome analyses are performed, and machine-learning models are evaluated for mortality-risk prediction.
-    </p>
-    <p>
-    The main value of the dashboard is not a single number or model. It is the ability to connect <b>patient characteristics → current clinical severity → laboratory and cardiac signals → observed outcomes → model-based risk estimates</b> in a form that can be explored patient by patient or across the population.
-    </p>
-    <p>
-    The results should be interpreted as <b>associations and research findings</b>. The source dataset comes from a single hospital and is retrospective, and the original documentation notes that models developed from it may not generalize to other settings. Therefore, this dashboard is intended for <b>education, analytics and research</b>, not for autonomous diagnosis or treatment decisions.
-    </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    with st.expander("How the HeartFailure project was built"):
-        st.markdown("""
-        **Data source:** PhysioNet HeartFailure dataset, version 1.3.
-
-        **Workflow:** seven source tables → patient-level integrated dataset → data cleaning → feature engineering → descriptive analysis → clinical outcome analysis → predictive modeling → patient-level exploration.
-
-        **Models:** Logistic Regression, Random Forest and Artificial Neural Network (ANN). Performance is reviewed with multiple metrics rather than a single accuracy value.
-
-        **Important limitation:** this is a retrospective single-center dataset. Model results are not externally validated and should not be interpreted as proof of causation or as a clinical decision rule.
-        """)
+    st.markdown("<div class='pagetitle' style='font-size:36px'>🏁 Conclusion</div>", unsafe_allow_html=True)
+    concl = ["With tests the hospital already does on day 1 (bedside check + routine blood tests), it can spot high-risk patients early",
+             "Acting on these warning signs can save lives, free ICU beds and reduce readmissions through early follow-up",
+             "Limits: one hospital's data and few deaths; results show links, not proof of cause"]
+    items = "".join(f"<div class='it'>✅ {x}</div>" for x in concl)
+    st.markdown(f"<div class='checkbox'>{items}</div>", unsafe_allow_html=True)
