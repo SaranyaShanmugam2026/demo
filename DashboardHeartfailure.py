@@ -199,42 +199,115 @@ def cv_probs(data, features, target, model_name, repeats=1):
 # ----------------------------- SIDEBAR -----------------------------
 with st.sidebar:
     st.markdown("<div style='text-align:center;font-size:48px'>❤️</div>"
-                "<h2 style='text-align:center;margin:0'>Cardiac Failure</h2>"
-                "<p style='text-align:center'>Team 2 • PythonPioneers</p>", unsafe_allow_html=True)
-    page = st.radio("NAVIGATION", ["🏠 Introduction", "📘 Data Overview", "🧹 Data Cleaning", "🧬 Feature Engineering", "📊 Descriptive & Prescriptive Analysis", "👤 Patient Explorer", "📊 Model Performance", "⭐ Key Insights & Takeaways", "🏁 Conclusion"], label_visibility="collapsed")
+                "<h2 style='text-align:center;margin:0'>HeartFailure</h2>"
+                "<p style='text-align:center'>Team Pycore</p>", unsafe_allow_html=True)
+    page = st.radio("NAVIGATION", ["🏠 Introduction", "📘 Data Overview", "🧹 Data Cleaning & Features",
+                                   "📊 Insights", "🤖 Model Performance", "📌 Key Takeaways & Conclusion"],
+                    label_visibility="collapsed")
 
 
 # =====================================================================
 # 1. INTRODUCTION
 # =====================================================================
 if page == "🏠 Introduction":
-    st.markdown("<div class='hdr'><h1>❤️ Cardiac Failure Analytics</h1><p>Heart-failure clinical analytics and mortality-risk exploration</p></div>", unsafe_allow_html=True)
-    st.markdown("""<div class='section'><h3 style='color:#073B4C;margin-top:0'>Project Information</h3>
-    <p><b>Project Name:</b> Cardiac Failure Analytics</p>
-    <p><b>Team Name:</b> PythonPioneers</p>
-    <p><b>Team Members:</b> Saranya Shanmugam, Aditi, Sudha</p>
-    <p><b>Project Focus:</b> Clinical analytics of heart-failure patients and Artificial Neural Network-based mortality risk estimation.</p></div>""", unsafe_allow_html=True)
+    st.markdown("<div class='hdr'><h1>❤️ HeartFailure Clinical Explorer</h1><p>Hospital heart-failure analytics dashboard</p></div>", unsafe_allow_html=True)
 
-if page == "📘 Data Overview":
-    st.markdown("<div class='hdr'><h1>📘 Data Overview</h1><p>What this project studies and what the hospital dataset contains</p></div>", unsafe_allow_html=True)
-    st.markdown("""<div class='section'><h3 style='color:#073B4C;margin-top:0'>What is this project about?</h3>
-    <p>This project uses hospital heart-failure data to examine patient characteristics, clinical severity, laboratory and cardiac measurements, hospital outcomes, and mortality-risk patterns.</p>
-    <p>The dashboard brings together <b>descriptive analysis</b>, <b>clinical review of observed associations</b>, and <b>predictive modeling</b> so the same dataset can be explored from population level to individual patient level.</p>
-    </div>""", unsafe_allow_html=True)
-    c1,c2,c3,c4=st.columns(4)
-    c1.metric("Patients",f"{len(df):,}")
-    c2.metric("Variables",f"{df.shape[1]:,}")
-    c3.metric("Unique patients",f"{df['inpatient_number'].nunique():,}" if 'inpatient_number' in df.columns else "—")
-    c4.metric("Data type","Hospital clinical data")
-    st.markdown("""<div class='section'><h3 style='color:#073B4C;margin-top:0'>What does the dataset contain?</h3>
-    <p><b>Patient profile:</b> demographics, age, weight, height and BMI.</p>
-    <p><b>Cardiac severity:</b> NYHA, Killip, heart-failure characteristics and cardiac measurements.</p>
-    <p><b>Laboratory and biomarkers:</b> inflammation, nutrition, kidney function, cardiac injury, electrolytes, blood-gas and other clinical measurements.</p>
-    <p><b>Hospital course and outcomes:</b> admission information, length of stay, discharge destination, mortality, readmission and emergency-department return outcomes where available.</p>
-    <p><b>Medication information:</b> patient-level medication indicators derived from prescription records.</p>
-    </div>""", unsafe_allow_html=True)
+    intro_img = Path(__file__).parent / "heartfailure_intro.png"
+    if intro_img.exists():
+        st.image(str(intro_img), use_container_width=True)
 
-if page == "🧹 Data Cleaning & Features":
+    st.markdown("""
+    <div class='section'>
+    <h3 style='color:#073B4C;margin-top:0'>Project Name</h3>
+    <p style='font-size:20px'><b>HeartFailure Clinical Explorer</b></p>
+    <h3 style='color:#073B4C'>Team Name</h3>
+    <p style='font-size:20px'><b>Pycore</b></p>
+    <h3 style='color:#073B4C'>Team Members</h3>
+    <p style='font-size:18px'>Jenifer &nbsp;•&nbsp; Gunashree &nbsp;•&nbsp; Saranya &nbsp;•&nbsp; Sarika &nbsp;•&nbsp; Savithapriya</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# =====================================================================
+# 2. DATA OVERVIEW
+# =====================================================================
+elif page == "📘 Data Overview":
+    st.markdown("<div class='hdr'><h1>📘 HeartFailure Dataset Overview</h1><p>What this project studies and what information the dataset contains</p></div>", unsafe_allow_html=True)
+
+    overview_img = Path(__file__).parent / "heartfailure_data_overview.png"
+    if overview_img.exists():
+        st.image(str(overview_img), use_container_width=True)
+
+    st.markdown("""
+    <div class='section'>
+    <h3 style='color:#073B4C;margin-top:0'>What is the HeartFailure dataset?</h3>
+    <p>
+    The <b>HeartFailure dataset</b> is a retrospective hospital dataset of patients admitted with heart failure at
+    <b>Zigong Fourth People's Hospital, Sichuan, China</b>. The original PhysioNet resource contains information on
+    <b>2,008 patients and 168 variables</b>, with records collected between <b>December 2016 and June 2019</b>.
+    The project combines admission characteristics, cardiac measurements, laboratory results, medical history,
+    hospitalization information and follow-up outcomes.
+    </p>
+    <p>
+    Follow-up information includes outcomes at <b>28 days, 3 months and 6 months</b>. This makes the dataset useful
+    for studying both what patients looked like at admission and what happened after hospitalization.
+    </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1: kpi("👥", "Patients in project data", f"{df['inpatient_number'].nunique():,}")
+    with c2: kpi("🧩", "Source tables integrated", "7")
+    with c3: kpi("📋", "Project columns", f"{df.shape[1]:,}")
+    with c4: kpi("📅", "Source study period", "2016–2019")
+
+    st.markdown("""
+    <div class='section'>
+    <h3 style='color:#073B4C;margin-top:0'>What information is included?</h3>
+    <table style='width:100%;border-collapse:collapse'>
+    <tr><th style='text-align:left;padding:10px;border-bottom:1px solid #D9E7EB'>Domain</th><th style='text-align:left;padding:10px;border-bottom:1px solid #D9E7EB'>Examples</th><th style='text-align:left;padding:10px;border-bottom:1px solid #D9E7EB'>Why it matters in this project</th></tr>
+    <tr><td style='padding:10px'>Demography</td><td style='padding:10px'>Gender, age category, height, weight, BMI, occupation</td><td style='padding:10px'>Describes the patient population</td></tr>
+    <tr><td style='padding:10px'>Cardiac status</td><td style='padding:10px'>NYHA, Killip, LVEF, LVEDD, E/A and valve measures</td><td style='padding:10px'>Represents heart-failure severity and cardiac function</td></tr>
+    <tr><td style='padding:10px'>History & comorbidity</td><td style='padding:10px'>Prior disease and comorbidity indicators</td><td style='padding:10px'>Provides clinical background</td></tr>
+    <tr><td style='padding:10px'>Laboratory data</td><td style='padding:10px'>BNP, troponin, kidney, blood, inflammation and metabolic markers</td><td style='padding:10px'>Captures physiological and organ-system status</td></tr>
+    <tr><td style='padding:10px'>Hospitalization & treatment</td><td style='padding:10px'>Admission, length of stay, respiratory support and medications</td><td style='padding:10px'>Describes the hospital episode</td></tr>
+    <tr><td style='padding:10px'>Outcomes</td><td style='padding:10px'>In-hospital status, mortality, readmission and emergency return</td><td style='padding:10px'>Provides the outcomes analyzed in the dashboard</td></tr>
+    </table>
+    </div>
+    """, unsafe_allow_html=True)
+
+    left, right = st.columns([1, 1.25])
+    with left:
+        st.markdown("""
+        <div class='section'>
+        <h4 style='color:#073B4C;margin-top:0'>How our project uses the dataset</h4>
+        <ol>
+        <li><b>Integrate:</b> combine the seven source tables using the patient identifier.</li>
+        <li><b>Clean:</b> remove invalid values, address missingness and standardize the analytical dataset.</li>
+        <li><b>Engineer:</b> create clinically interpretable groups and derived features.</li>
+        <li><b>Analyze:</b> examine patterns in severity, biomarkers, readmission and mortality.</li>
+        <li><b>Model:</b> evaluate Logistic Regression, Random Forest and an Artificial Neural Network for mortality-risk analysis.</li>
+        </ol>
+        </div>
+        """, unsafe_allow_html=True)
+    with right:
+        out_cols = ["re_admission_within_28_days","re_admission_within_3_months","re_admission_within_6_months","death_within_28_days","death_within_3_months","death_within_6_months"]
+        available = [c for c in out_cols if c in df.columns]
+        if available:
+            rows=[]
+            labels={"re_admission_within_28_days":"Readmission — 28 days","re_admission_within_3_months":"Readmission — 3 months","re_admission_within_6_months":"Readmission — 6 months","death_within_28_days":"Mortality — 28 days","death_within_3_months":"Mortality — 3 months","death_within_6_months":"Mortality — 6 months"}
+            for c in available: rows.append((labels[c], float(df[c].mean()*100)))
+            odf=pd.DataFrame(rows,columns=["Outcome","Percent"])
+            fig=px.bar(odf,x="Percent",y="Outcome",orientation="h",text_auto=".1f",color_discrete_sequence=[TEAL2],title="Observed follow-up outcomes in the project data")
+            fig.update_layout(xaxis_title="Patients (%)",yaxis_title="",height=340)
+            st.plotly_chart(style(fig),width="stretch")
+
+    st.info("Source: PhysioNet — Hospitalized patients with heart failure: integrating electronic healthcare records and external outcome data, version 1.3. The original resource is restricted-access and should be cited according to the PhysioNet data-use requirements.")
+    st.link_button("Open the PhysioNet HeartFailure dataset description", "https://www.physionet.org/content/heart-failure-zigong/1.3/")
+
+# =====================================================================
+# 3. DATA CLEANING & FEATURE ENGINEERING
+# =====================================================================
+elif page == "🧹 Data Cleaning & Features":
     st.markdown("<div class='hdr'><h1>🧹 Data Cleaning & Feature Engineering</h1>"
                 "<p>From 7 messy tables to 1 trusted table (one row per patient)</p></div>", unsafe_allow_html=True)
 
@@ -308,7 +381,7 @@ elif page == "📊 Insights":
 
     d28 = "death_within_28_days"
     tabs = st.tabs(["👥 Patients", "💊 Medicines", "🫘 Kidneys", "🩸 Anemia", "🩺 Blood Pressure",
-                    "🛏️ Bedside Check", "🕰️ Current Clinical Severity vs Prior History", "🧪 Blood Test", "🔁 Who Comes Back"])
+                    "🩺 Current Clinical Severity", "🧭 Current Severity vs Prior History", "🧪 Blood Test", "🔁 Readmission Patterns"])
 
     # ---------- Descriptive ----------
     with tabs[0]:
@@ -376,7 +449,7 @@ elif page == "📊 Insights":
         st.plotly_chart(two_outcomes(table, "Only severe anemia stands out"), width="stretch")
         found("Mild and moderate anemia are very common but add little risk. <b>Severe anemia (hemoglobin below 80)</b> "
               "nearly <b>triples</b> the 6-month death rate (6.8% vs about 2.5%).")
-        todo("Flag hemoglobin below 80 at admission and correct it (iron, transfusion if needed).")
+        todo("Severe anemia is associated with higher observed mortality in this dataset; this can be treated as a review flag alongside the broader clinical picture.")
 
     with tabs[4]:
         badge("Prescriptive")
@@ -388,7 +461,7 @@ elif page == "📊 Insights":
         found("Only 20 patients arrived with low blood pressure (below 90), but <b>9 in 10 had symptoms at rest</b> and "
               "<b>8 in 10 had fluid in the lungs or shock</b>. They did <b>not</b> get heart-support drips more often. "
               "Patients with higher blood pressure came back <b>less</b> often, because their heart still has pumping strength.")
-        todo("Treat blood pressure below 90 as possible shock and move the patient to close monitoring.")
+        todo("Very low admission blood pressure is associated with higher observed risk in this dataset and can be highlighted for clinical review alongside other severity measures.")
 
     # ---------- Predictive ----------
     with tabs[5]:
@@ -410,7 +483,7 @@ elif page == "📊 Insights":
         found("A 30-second bedside exam (Killip grade) sorts patients very well. <b>None of 527 Killip 1 patients died</b> "
               "within 28 days, while <b>1 in 4 Killip 4 patients died</b>. Adding symptom level makes it sharper: "
               "0.4% vs <b>11.9%</b> deaths, a <b>30 times</b> difference.")
-        todo("Killip 1 patients can safely go to a normal ward. Killip 4 patients need ICU-level care.")
+        todo("The observed mortality gradient across Killip grades supports using current severity measures as an important part of risk review. It should not be interpreted as a standalone disposition rule.")
 
     with tabs[6]:
         badge("Predictive")
@@ -422,15 +495,15 @@ elif page == "📊 Insights":
         }) * 100
         left, right = st.columns(2)
         with left:
-            st.plotly_chart(bar(list(hist.index), hist.values, "Past history: death rate hardly changes (%)", ["#9FB7BE"] * 4),
+            st.plotly_chart(bar(list(hist.index), hist.values, "Prior history: observed 28-day mortality", ["#9FB7BE"] * 4),
                             width="stretch")
         with right:
             kil = df.groupby("killip_grade")[d28].mean() * 100
-            st.plotly_chart(bar([f"Killip {x}" for x in kil.index], kil.values, "Condition today: death rate changes a lot (%)", RAMP[1:]),
+            st.plotly_chart(bar([f"Killip {x}" for x in kil.index], kil.values, "Current clinical severity: observed 28-day mortality", RAMP[1:]),
                             width="stretch")
         found("A patient's <b>past</b> (old heart attack, earlier heart failure) tells us almost nothing about who will die: "
               "about 2% either way. How sick the patient is <b>today</b> tells us almost everything.")
-        todo("Decide the level of care from today's bedside exam, not from the list of old diagnoses.")
+        todo("Use current severity and prior history together as complementary information during clinical review; this analysis describes associations and is not a standalone care decision rule.")
 
     with tabs[7]:
         badge("Predictive")
@@ -614,55 +687,60 @@ patients and tested on the other 1/5, five times over (5-fold cross-validation),
 # =====================================================================
 # 6. KEY TAKEAWAYS & CONCLUSION
 # =====================================================================
-elif page == "⭐ Key Insights & Takeaways":
-    st.markdown("<div class='hdr'><h1>📌 Key Takeaways & Conclusion</h1><p>What we learned and what the hospital can do</p></div>",
-                unsafe_allow_html=True)
+elif page == "📌 Key Takeaways & Conclusion":
+    st.markdown("<div class='hdr'><h1>📌 Key Takeaways & Conclusion</h1><p>What the HeartFailure analysis tells us</p></div>", unsafe_allow_html=True)
 
     left, right = st.columns(2)
     with left:
         st.markdown("""
-<div class='section'>
-<h4 style='color:#073B4C;margin-top:0'>⭐ Key takeaways</h4>
-<ul>
-<li><b>Coming back is the bigger problem:</b> more than 1 in 3 patients return within 6 months; about 3 in 100 die.</li>
-<li><b>Today matters more than the past:</b> a 30-second bedside check finds most patients who die. Old diagnoses do not.</li>
-<li><b>Three warning signs:</b> weak kidneys, severe anemia and low blood pressure raise the risk the most.</li>
-<li><b>Simple tests win:</b> NLR from the routine blood count beat a special test that half the patients never had.</li>
-<li><b>Simple models win:</b> Logistic Regression matched or beat Random Forest and the neural network.</li>
-<li><b>Medicine gap:</b> only about 4 in 10 patients get the key long-term heart medicines.</li>
-</ul>
-</div>
-""", unsafe_allow_html=True)
+        <div class='section'>
+        <h4 style='color:#073B4C;margin-top:0'>⭐ Key Takeaways</h4>
+        <ul>
+        <li><b>The dataset supports a complete hospital-episode view:</b> demographic, cardiac, laboratory, history, treatment and outcome information can be examined together at the patient level.</li>
+        <li><b>Current severity is important:</b> NYHA and Killip provide admission-level measures that can be compared with mortality and readmission outcomes.</li>
+        <li><b>Multiple organ systems matter:</b> kidney function, blood markers, inflammation, nutrition and cardiac biomarkers provide complementary signals rather than a single explanation.</li>
+        <li><b>Readmission and mortality are different outcomes:</b> a patient may have a higher observed likelihood of returning without having the same mortality pattern, so they should be analyzed separately.</li>
+        <li><b>Feature engineering improves interpretation:</b> clinically meaningful groups and warning flags make complex laboratory and clinical values easier to explore.</li>
+        <li><b>Machine learning adds a patient-level risk view:</b> Logistic Regression, Random Forest and ANN can be compared using held-out/cross-validated predictions and multiple performance metrics.</li>
+        </ul>
+        </div>
+        """, unsafe_allow_html=True)
     with right:
         st.markdown("""
-<div class='section'>
-<h4 style='color:#073B4C;margin-top:0'>🏥 What the hospital should do</h4>
-<ul>
-<li><b>When the patient arrives:</b> do the quick bedside check. Mild cases go to the ward; fluid in the lungs,
-shock or low blood pressure go to close monitoring.</li>
-<li><b>After the first blood test:</b> flag weak kidneys, severe anemia and high NLR for extra care.</li>
-<li><b>During the stay:</b> make sure patients get the recommended heart medicines.</li>
-<li><b>Before going home:</b> high-risk patients get a follow-up call and a clinic visit within 2 weeks.</li>
-</ul>
-</div>
-""", unsafe_allow_html=True)
+        <div class='section'>
+        <h4 style='color:#073B4C;margin-top:0'>🏥 How the dashboard can be used</h4>
+        <ul>
+        <li><b>At admission:</b> review current clinical severity together with prior history, comorbidities and baseline laboratory results.</li>
+        <li><b>During analysis:</b> use the descriptive views to understand which patient groups and biomarkers are associated with different outcomes.</li>
+        <li><b>For risk review:</b> use model probabilities as an analytical flag for closer review, not as a diagnosis or automatic treatment decision.</li>
+        <li><b>For follow-up planning:</b> examine readmission patterns separately from mortality because they represent different patient outcomes.</li>
+        <li><b>For quality improvement:</b> compare observed patterns across patient groups and identify areas that may deserve further clinical investigation.</li>
+        </ul>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("""
-<div class='section'>
-<h4 style='color:#073B4C;margin-top:0'>🏁 Conclusion</h4>
-<ul>
-<li>Heart failure patients in this hospital arrive old and very sick, and many come back soon.</li>
-<li>With tests the hospital <b>already does on day 1</b>, it can spot the patients most likely to die or return.</li>
-<li>Acting on these signs can <b>save lives, free up ICU beds and reduce returns</b>.</li>
-<li><b>Limits:</b> data from one hospital, few deaths, and the results show links, not proof of cause.</li>
-</ul>
-</div>
-""", unsafe_allow_html=True)
+    <div class='section'>
+    <h4 style='color:#073B4C;margin-top:0'>🏁 Conclusion</h4>
+    <p>
+    The <b>HeartFailure Clinical Explorer</b> brings the project workflow into one place: the source hospital records are integrated and cleaned, clinically meaningful features are created, descriptive and outcome analyses are performed, and machine-learning models are evaluated for mortality-risk prediction.
+    </p>
+    <p>
+    The main value of the dashboard is not a single number or model. It is the ability to connect <b>patient characteristics → current clinical severity → laboratory and cardiac signals → observed outcomes → model-based risk estimates</b> in a form that can be explored patient by patient or across the population.
+    </p>
+    <p>
+    The results should be interpreted as <b>associations and research findings</b>. The source dataset comes from a single hospital and is retrospective, and the original documentation notes that models developed from it may not generalize to other settings. Therefore, this dashboard is intended for <b>education, analytics and research</b>, not for autonomous diagnosis or treatment decisions.
+    </p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    with st.expander("How we built this dashboard"):
+    with st.expander("How the HeartFailure project was built"):
         st.markdown("""
-- **Tools:** Python, pandas, scikit-learn, Plotly and Streamlit, so our notebook code runs directly here.
-- **Idea:** we asked "who would open this dashboard and what would they decide?", so we added a risk check, not just charts.
-- **Challenges:** very few deaths, so we judged models by ROC-AUC on unseen patients instead of accuracy;
-  missing lab results were filled only inside model training; models are cached so the app stays fast.
-""")
+        **Data source:** PhysioNet HeartFailure dataset, version 1.3.
+
+        **Workflow:** seven source tables → patient-level integrated dataset → data cleaning → feature engineering → descriptive analysis → clinical outcome analysis → predictive modeling → patient-level exploration.
+
+        **Models:** Logistic Regression, Random Forest and Artificial Neural Network (ANN). Performance is reviewed with multiple metrics rather than a single accuracy value.
+
+        **Important limitation:** this is a retrospective single-center dataset. Model results are not externally validated and should not be interpreted as proof of causation or as a clinical decision rule.
+        """)
