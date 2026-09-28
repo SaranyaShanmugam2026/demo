@@ -1,9 +1,9 @@
 # =====================================================================
-#  Cardiac Failure Analytics Dashboard
-#  Team 2 - PythonPioneers | NumpyNinja Python Hackathon
+#  HeartFailure Clinical Explorer
+#  Team Python Pioneers | NumpyNinja Python Hackathon
 #
 #  Run:  streamlit run DashboardHeartfailure.py
-#  Data: Cardiac_Cleaned_Data.xlsb (or Cardiac_Cleaned_Data.csv) in the same folder
+#  Data: Cardiac_Cleaned_Data.xlsb in the same folder
 # =====================================================================
 
 import streamlit as st
@@ -25,7 +25,7 @@ from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              roc_auc_score, average_precision_score, confusion_matrix, roc_curve)
 
-st.set_page_config(page_title="Cardiac Failure Analytics", page_icon="❤️", layout="wide")
+st.set_page_config(page_title="HeartFailure Clinical Explorer", page_icon="❤️", layout="wide")
 
 # ----------------------------- COLOURS (from our original file) -----------------------------
 NAVY = "#073B4C"       # dark teal / headings
@@ -46,7 +46,7 @@ st.markdown(f"""
 section[data-testid="stSidebar"] {{background:linear-gradient(180deg,#073B4C,#0B5D6B,#087F5B);}}
 section[data-testid="stSidebar"] * {{color:white !important;}}
 
-/* Sidebar navigation as buttons (like the diabetes dashboard) */
+/* Sidebar navigation styling */
 section[data-testid="stSidebar"] div[data-testid="stRadio"], section[data-testid="stSidebar"] div[data-testid="stRadio"] > div {{width:100%;}}
 section[data-testid="stSidebar"] div[role="radiogroup"] {{gap:14px; width:100%; display:flex; flex-direction:column; align-items:stretch;}}
 section[data-testid="stSidebar"] div[role="radiogroup"] label {{
@@ -70,7 +70,7 @@ section[data-testid="stSidebar"] div[role="radiogroup"] p {{font-size:16px; font
 .member {{background:white;border-radius:14px;padding:18px;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,.06);border-top:5px solid #087F5B;}}
 .member .n {{font-size:17px;font-weight:700;color:#073B4C}} .member .r {{font-size:13px;color:#637B83}}
 .stTabs [data-baseweb="tab"] p {{font-size:15px;}}
-/* ---------- Reference-style blocks ---------- */
+/* ---------- HeartFailure Clinical Explorer styling ---------- */
 .hero {{background:linear-gradient(120deg,#FFFFFF 0%,#EAF5F8 55%,#D6EFE6 100%);border-radius:22px;padding:40px 44px 0 44px;
         box-shadow:0 6px 20px rgba(7,59,76,.10);overflow:hidden;position:relative;}}
 .hero .t1 {{font-size:64px;font-weight:900;color:#073B4C;line-height:1;letter-spacing:1px;margin:0;}}
@@ -142,7 +142,7 @@ def todo(text):
 
 
 def kpi2(icon, title, value):
-    """Plain white KPI card, diabetes-dashboard style."""
+    """Plain white KPI card for the HeartFailure dashboard."""
     st.markdown(f"<div class='kpi2'><div class='t'>{icon} {title}</div><div class='v'>{value}</div></div>",
                 unsafe_allow_html=True)
 
@@ -186,11 +186,10 @@ HERE = Path(__file__).parent
 
 @st.cache_data
 def load_data():
-    xlsb, csv = HERE / "Cardiac_Cleaned_Data.xlsb", HERE / "Cardiac_Cleaned_Data.csv"
-    if xlsb.exists():
-        df = pd.read_excel(xlsb, engine="pyxlsb")
-    else:
-        df = pd.read_csv(csv)
+    data_file = HERE / "Cardiac_Cleaned_Data.xlsb"
+    if not data_file.exists():
+        raise FileNotFoundError("Cardiac_Cleaned_Data.xlsb was not found beside the dashboard file.")
+    df = pd.read_excel(data_file, engine="pyxlsb")
     new = {}
 
     stage_order = ["G1 (>=90)", "G2 (60-89)", "G3a (45-59)", "G3b (30-44)", "G4 (15-29)", "G5 (<15)"]
@@ -267,10 +266,10 @@ with st.sidebar:
     st.markdown(f"<div class='team-logo'><img src='data:image/png;base64,{LOGO_B64}' alt='Team logo'></div>",
                 unsafe_allow_html=True)
     st.markdown("<div style='text-align:center;font-size:48px'>❤️</div>"
-                "<h2 style='text-align:center;margin:0'>Cardiac Failure</h2>"
-                "<p style='text-align:center'>Team 2 • PythonPioneers</p>", unsafe_allow_html=True)
+                "<h2 style='text-align:center;margin:0'>HeartFailure</h2>"
+                "<p style='text-align:center'>Team Python Pioneers</p>", unsafe_allow_html=True)
     page = st.radio("NAVIGATION", ["🏠 Introduction", "📘 Data Overview", "🧹 Data Cleaning & Feature Engineering",
-                                   "📊 Insights", "🤖 Model Performance", "📌 Key Takeaways & Conclusion"],
+                                   "🩺 Interactive Clinical Insights", "🤖 Model Performance", "📌 Key Takeaways & Conclusion"],
                     label_visibility="collapsed")
 
 
@@ -278,31 +277,21 @@ with st.sidebar:
 # 1. INTRODUCTION
 # =====================================================================
 if page == "🏠 Introduction":
-    team = [("Aditi Mishra", "Team Lead", NAVY), ("Saranya Shanmugam", "Team Member", GREEN),
-            ("Sashi Laguduva", "Team Member", BLUE), ("Sudha Madhuri Basa", "Team Member", ALERT)]
+    team = [("Aditi Mishra", "Team Member", NAVY), ("Saranya Shanmugam", "Team Member", GREEN),
+            ("Sahi Laguduva", "Team Member", BLUE), ("Sudha Madhuri Basa", "Team Member", ALERT)]
     members = "".join(
         f"<div class='tm'><div class='av' style='background:{c}'>👤</div>"
         f"<div><div class='nm' style='color:{c}'>{n}</div><div class='rl' style='border-color:{c}'>{r}</div></div></div>"
         for n, r, c in team)
-    heart_svg = (
-        "<svg viewBox='0 0 220 200' width='300' style='position:absolute;right:50px;top:40px;opacity:.95'>"
-        "<defs><linearGradient id='hg' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#E86A7A'/>"
-        "<stop offset='1' stop-color='#B8324A'/></linearGradient></defs>"
-        "<path d='M110 185 C 30 125, 5 75, 40 38 C 70 8, 102 22, 110 50 C 118 22, 150 8, 180 38 C 215 75, 190 125, 110 185 Z' fill='url(#hg)'/>"
-        "<polyline points='20,105 70,105 85,80 100,135 118,55 135,120 148,105 200,105' fill='none' stroke='white' "
-        "stroke-width='7' stroke-linejoin='round' stroke-linecap='round'/></svg>")
     st.markdown(
-        f"<div class='hero'>{heart_svg}"
-        "<p class='t1'>CARDIAC FAILURE</p>"
-        "<p class='t2'>HEART FAILURE DATASET</p>"
-        "<div class='sub'>Spotting high-risk heart failure patients on the day they are admitted</div>"
+        f"<div class='hero'>"
+        "<p class='t1'>HEARTFAILURE</p>"
+        "<p class='t2'>CLINICAL EXPLORER</p>"
         "<div class='line'></div>"
-        "<div style='text-align:center'><span class='pill'>TEAM 2: PYTHONPIONEERS</span>"
+        "<div style='text-align:center'><span class='pill'>TEAM PYTHON PIONEERS</span>"
         "<div class='meet'>—— MEET OUR TEAM ——</div></div>"
         f"<div style='display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px'>{members}</div>"
-        "<div class='herobar'><span>⭐ Early Risk Detection</span><span>❤️ Better Decisions</span>"
-        "<span>👥 Healthier Hearts</span></div></div>", unsafe_allow_html=True)
-
+        "</div>", unsafe_allow_html=True)
 
 # =====================================================================
 # 2. DATA OVERVIEW
@@ -327,7 +316,7 @@ elif page == "📘 Data Overview":
 
     left, right = st.columns([1, 3.2])
     with left:
-        st.markdown(f"<div class='spec'><h3>Cardiac Failure<br>Dataset Specifications</h3>{spec}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='spec'><h3>HeartFailure<br>Dataset Specifications</h3>{spec}</div>", unsafe_allow_html=True)
 
     def mini(fig):
         fig.update_layout(template="plotly_white", height=150, margin=dict(t=5, l=5, r=5, b=5), showlegend=False,
@@ -400,10 +389,10 @@ elif page == "🧹 Data Cleaning & Feature Engineering":
 
 
 # =====================================================================
-# 4. INSIGHTS  (guided: Insight Area -> Marker -> Outcome)
+# 4. INTERACTIVE CLINICAL INSIGHTS  (guided: Insight Area -> Marker -> Outcome)
 # =====================================================================
-elif page == "📊 Interactive Clinical Insights":
-    st.markdown("<div class='dash-title'>📊 Cardiac Failure Dashboard</div>", unsafe_allow_html=True)
+elif page == "🩺 Interactive Clinical Insights":
+    st.markdown("<div class='dash-title'>📊 HeartFailure Clinical Explorer</div>", unsafe_allow_html=True)
 
     c1, c2, c3, c4 = st.columns(4)
     with c1: kpi2("🔁", "Came back (6 months)", pct(df["re_admission_within_6_months"].mean()))
