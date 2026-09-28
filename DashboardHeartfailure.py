@@ -412,11 +412,41 @@ elif page == "🤖 Predictive Analytics":
             Xtr,Xte,ytr,yte=train_test_split(X,y,test_size=.2,random_state=42,stratify=y)
             model=Pipeline([("impute",SimpleImputer(strategy="median")),("scale",StandardScaler()),("ann",MLPClassifier(hidden_layer_sizes=(64,32),max_iter=500,random_state=42,early_stopping=True))])
             model.fit(Xtr,ytr)
-            proba=model.predict_proba(Xte)[:,1]; pred=(proba>=.5).astype(int)
-            c1,c2,c3=st.columns(3)
-            with c1:kpi("🎯","Predicted positive cases",f"{pred.sum():,}")
-            with c2:kpi("📈","Mean predicted risk",f"{proba.mean()*100:.1f}%")
-            with c3:kpi("👥","Test patients",f"{len(yte):,}")
+           proba = model.predict_proba(Xte)[:, 1]
+
+# Descriptive risk bands for dashboard exploration.
+# These are NOT clinical treatment thresholds.
+risk_20 = int((proba >= 0.20).sum())
+
+c1, c2, c3, c4 = st.columns(4)
+
+with c1:
+    kpi(
+        "👥",
+        "Test patients",
+        f"{len(yte):,}"
+    )
+
+with c2:
+    kpi(
+        "📈",
+        "Mean predicted risk",
+        f"{proba.mean()*100:.1f}%"
+    )
+
+with c3:
+    kpi(
+        "🔴",
+        "Highest predicted risk",
+        f"{proba.max()*100:.1f}%"
+    )
+
+with c4:
+    kpi(
+        "⚠️",
+        "Patients ≥20% risk",
+        f"{risk_20:,}"
+    )
             st.subheader("Patient risk explorer")
             vals={}
             cols=st.columns(3)
