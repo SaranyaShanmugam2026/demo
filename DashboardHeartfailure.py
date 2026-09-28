@@ -214,7 +214,7 @@ with st.sidebar:
                 "<h2 style='text-align:center;margin:0'>HeartFailure</h2>"
                 "<p style='text-align:center'>Team Python Pioneers</p>", unsafe_allow_html=True)
     page = st.radio("NAVIGATION", ["🏠 Introduction", "📘 Data Overview", "🧹 Data Cleaning & Features",
-                                   "📊 Insights", "🤖 Model Performance", "📌 Key Takeaways & Conclusion"],
+                                   "🩺 Interactive Clinical Insights", "🤖 Model Performance", "📌 Key Takeaways & Conclusion"],
                     label_visibility="collapsed")
 
 
@@ -442,175 +442,300 @@ elif page == "🧹 Data Cleaning & Features":
 # =====================================================================
 # 4. INSIGHTS (descriptive + prescriptive + predictive in tabs)
 # =====================================================================
-elif page == "📊 Insights":
-    st.markdown("<div class='hdr'><h1>📊 Insights</h1><p>Descriptive • Prescriptive • Predictive, in simple words</p></div>",
-                unsafe_allow_html=True)
+elif page == "🩺 Interactive Clinical Insights":
+    st.markdown("<div class='hdr'><h1>🩺 Interactive Clinical Insights</h1><p>Select an analysis area, outcome and clinical marker to see the finding, evidence and interpretation.</p></div>", unsafe_allow_html=True)
 
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: kpi("🔁", "Came back within 6 months", pct(df["re_admission_within_6_months"].mean()))
-    with c2: kpi("⚠️", "Died within 6 months", pct(df["death_within_6_months"].mean()))
-    with c3: kpi("❤️", "Severe symptoms (NYHA III–IV)", pct((df["nyha_cardiac_function_classification"] >= 3).mean()))
-    with c4: kpi("🧪", "Median BNP (heart strain)", f"{df['brain_natriuretic_peptide'].median():.0f} pg/mL")
-    st.write("")
+    st.markdown("""
+    <div class='section'>
+    <h3 style='color:#073B4C;margin-top:0'>🔍 How to use this page</h3>
+    <p>Choose <b>what clinical area you want to investigate</b>, then select the <b>marker</b> and the <b>outcome</b>. The dashboard updates the chart and the written finding automatically.</p>
+    <p style='margin-bottom:0;color:#637B83'>This makes each insight traceable: <b>Question → Evidence → Finding → Interpretation</b>.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    d28 = "death_within_28_days"
-    tabs = st.tabs(["👥 Patients", "💊 Medicines", "🫘 Kidneys", "🩸 Anemia", "🩺 Blood Pressure",
-                    "🩺 Current Clinical Severity", "🧭 Current Severity vs Prior History", "🧪 Blood Test", "🔁 Readmission Patterns"])
+    areas = [
+        "🫘 Kidney Function",
+        "🩸 Inflammation & Nutrition",
+        "❤️ Cardiac Biomarkers",
+        "🩺 Current Clinical Severity",
+        "🧭 Current Severity vs Prior History",
+        "🫁 Blood Gas",
+        "🩸 Anemia",
+        "🔁 Readmission Patterns",
+    ]
+    area = st.selectbox("1. Select Insight Area", areas)
 
-    # ---------- Descriptive ----------
-    with tabs[0]:
-        badge("Descriptive")
-        left, right = st.columns(2)
-        with left:
-            m = pd.Series({
-                "High BNP (heart under strain)": df["bnp_elevated_flag"].mean(),
-                "Heart muscle damage": df["troponin_elevated_flag"].mean(),
-                "Anemia": df["anemia_level"].isin(["Mild", "Moderate", "Severe"]).sum() / df["anemia_level"].notna().sum(),
-                "Weak kidneys (eGFR < 60)": (df["glomerular_filtration_rate"] < 60).sum() / df["glomerular_filtration_rate"].notna().sum(),
-                "Underweight": (df["bmi_category"] == "Underweight").mean(),
-                "Diabetes": df["diabetes"].mean(),
-            }).sort_values() * 100
-            fig = px.bar(m, orientation="h", text_auto=".0f", color_discrete_sequence=[TEAL2], title="How common each problem is (%)")
-            fig.update_layout(showlegend=False, xaxis_title="% of patients", yaxis_title="")
-            st.plotly_chart(style(fig), width="stretch")
-        with right:
-            sev = pd.crosstab(df["nyha_cardiac_function_classification"], df["killip_grade"])
-            sev.index = [f"NYHA {i}" for i in sev.index]
-            sev.columns = [f"Killip {c}" for c in sev.columns]
-            fig = px.imshow(sev, text_auto=True, color_continuous_scale=["#EAF5F8", TEAL2, NAVY],
-                            title="Patients by symptom level (NYHA) and fluid/shock level (Killip)")
-            fig.update_layout(coloraxis_showscale=False)
-            st.plotly_chart(style(fig), width="stretch")
-        found("Almost every patient has a strained heart (92% high BNP) and most show heart muscle damage (84%). "
-              "Anemia (61%) is more common than diabetes (23%). 1 in 4 patients is underweight, a sign of frailty.")
-        todo("This is a very sick, frail group, so extra checks at admission are worth the effort.")
+    def outcome_series(label):
+        mapping = {
+            "28-Day Mortality": "death_within_28_days",
+            "6-Month Mortality": "death_within_6_months",
+            "6-Month Readmission": "re_admission_within_6_months",
+            "In-Hospital Mortality": "in_hospital_death",
+        }
+        return mapping[label]
 
-    with tabs[1]:
-        badge("Descriptive")
-        drugs = pd.Series({
-            "Water tablets (diuretic)": ((df["Furosemide injection"] + df["Furosemide tablet"] + df["Torasemide tablet"] +
-                                          df["Hydrochlorothiazide tablet"]) > 0).mean(),
-            "Spironolactone": df["Spironolactone tablet"].mean(),
-            "ACE inhibitor / ARB": ((df["Benazepril hydrochloride tablet"] + df["Valsartan Dispersible tablet"]) > 0).mean(),
-            "Beta-blocker": ((df["Metoprolol Succinate Sustained-release tablet"] + df["metoprolol tartrate injection"]) > 0).mean(),
-        }).sort_values() * 100
-        fig = px.bar(drugs, orientation="h", text_auto=".0f", color_discrete_sequence=[GREEN], title="Recommended heart medicines given (%)")
-        fig.update_layout(showlegend=False, xaxis_title="% of patients", yaxis_title="")
-        st.plotly_chart(style(fig, 340), width="stretch")
-        found("Almost everyone gets water tablets (96%), but <b>only about 4 in 10</b> get the key long-term heart medicines "
-              "(ACE inhibitor/ARB, beta-blocker). Only 19% get the full recommended combination. The average patient takes 8 medicines.")
-        todo("Check before discharge that every suitable patient is on the recommended long-term medicines.")
+    # Build a safe in-hospital mortality proxy from the hospitalization outcome.
+    insight_df = df.copy()
+    if "in_hospital_death" not in insight_df.columns:
+        insight_df["in_hospital_death"] = (insight_df["outcome_during_hospitalization"].astype(str).str.strip().str.lower() == "dead").astype(int)
 
-    # ---------- Prescriptive ----------
-    with tabs[2]:
-        badge("Prescriptive")
-        k = df.dropna(subset=["ckd_stage"])
-        g = k.groupby("ckd_stage", observed=True)
-        table = pd.DataFrame({"Readmitted in 6 months": g["re_admission_within_6_months"].mean() * 100,
-                              "Died in 6 months": g["death_within_6_months"].mean() * 100})
-        st.plotly_chart(two_outcomes(table, "As kidneys get weaker, more patients die (kidney stage, worse →)"), width="stretch")
-        found("Weak kidneys and a weak heart pull each other down. Deaths rise from <b>1.6%</b> with healthy kidneys to "
-              "<b>9.2%</b> with kidney failure, and returns peak at <b>50%</b> in stage G3b.")
-        todo("Treat patients with eGFR below 45 as high risk: check potassium, dose water tablets carefully, "
-             "and see them again within 2 weeks of going home.")
+    marker = None
+    outcome_label = None
+    target = None
+    table = None
+    chart_title = ""
+    finding = ""
+    interpretation = ""
+    talk_track = ""
+    p_text = None
+    chart = None
 
-    with tabs[3]:
-        badge("Prescriptive")
-        a = df.dropna(subset=["anemia_level"])
-        g = a.groupby("anemia_level", observed=True)
-        table = pd.DataFrame({"Readmitted in 6 months": g["re_admission_within_6_months"].mean() * 100,
-                              "Died in 6 months": g["death_within_6_months"].mean() * 100})
-        st.plotly_chart(two_outcomes(table, "Only severe anemia stands out"), width="stretch")
-        found("Mild and moderate anemia are very common but add little risk. <b>Severe anemia (hemoglobin below 80)</b> "
-              "nearly <b>triples</b> the 6-month death rate (6.8% vs about 2.5%).")
-        todo("Severe anemia is associated with higher observed mortality in this dataset; this can be treated as a review flag alongside the broader clinical picture.")
+    # ---------------- Kidney ----------------
+    if area == "🫘 Kidney Function":
+        marker_options = {
+            "eGFR": ("glomerular_filtration_rate", "Abnormal: eGFR < 60", lambda x: x < 60,
+                     {"6-Month Readmission": ("eGFR < 60", "eGFR ≥ 60", 44.8, 33.6, "p < 0.001"),
+                      "6-Month Mortality": ("eGFR < 60", "eGFR ≥ 60", 4.0, 2.0, "p = 0.014")} ),
+            "Creatinine": ("creatinine_enzymatic_method", "Abnormal: creatinine > 110", lambda x: x > 110,
+                     {"6-Month Readmission": ("Creatinine > 110", "Creatinine ≤ 110", 46.2, 35.2, "p < 0.001"),
+                      "6-Month Mortality": ("Creatinine > 110", "Creatinine ≤ 110", 4.9, 1.9, "p < 0.001")} ),
+            "Urea": ("urea", "Abnormal: urea > 8.3", lambda x: x > 8.3,
+                     {"6-Month Readmission": ("Urea > 8.3", "Urea ≤ 8.3", 42.6, 35.1, "p = 0.001"),
+                      "6-Month Mortality": ("Urea > 8.3", "Urea ≤ 8.3", 4.0, 1.7, "p = 0.003")} ),
+            "Cystatin C": ("cystatin", "Abnormal: cystatin > 0.98", lambda x: x > 0.98,
+                     {"6-Month Readmission": ("Cystatin > 0.98", "Cystatin ≤ 0.98", None, None, "p = 0.226"),
+                      "6-Month Mortality": ("Cystatin > 0.98", "Cystatin ≤ 0.98", None, None, "p = 0.056")} ),
+        }
+        marker = st.selectbox("2. Select Kidney Marker", list(marker_options.keys()))
+        outcome_label = st.selectbox("3. Select Outcome", ["6-Month Readmission", "6-Month Mortality"])
+        col, _, pmap = marker_options[marker]
+        target = outcome_series(outcome_label)
+        sub = insight_df.dropna(subset=[col, target]).copy()
+        high = pmap[outcome_label]
+        if high[2] is not None:
+            labels = [high[0], high[1]]
+            vals = [high[2], high[3]]
+            table = pd.DataFrame({"Group": labels, "Outcome rate (%)": vals})
+            chart = px.bar(table, x="Group", y="Outcome rate (%)", text_auto=".1f", color="Group",
+                           color_discrete_sequence=[DEATH if "Mortality" in outcome_label else READMIT, "#9FB7BE"],
+                           title=f"{marker}: {outcome_label}")
+            chart.update_layout(showlegend=False, yaxis_title="% of patients", xaxis_title="")
+            if vals[0] > vals[1]:
+                difference = vals[0] - vals[1]
+                finding = f"Patients with abnormal {marker.lower()} had a higher observed {outcome_label.lower()} rate: <b>{vals[0]:.1f}%</b> versus <b>{vals[1]:.1f}%</b>, a difference of <b>{difference:.1f} percentage points</b>."
+            else:
+                finding = f"The observed difference for abnormal {marker.lower()} was small in this analysis: <b>{vals[0]:.1f}%</b> versus <b>{vals[1]:.1f}%</b>."
+        else:
+            # Cystatin C is intentionally shown as a neutral comparison because the source analysis did not find a clear separation.
+            vals = sub.groupby((sub[col] > 0.98).map({True:"Cystatin > 0.98", False:"Cystatin ≤ 0.98"}), observed=False)[target].mean().mul(100)
+            table = vals.rename("Outcome rate (%)").reset_index().rename(columns={"index":"Group"})
+            chart = px.bar(table, x="Group", y="Outcome rate (%)", text_auto=".1f", color="Group",
+                           color_discrete_sequence=[TEAL2, "#9FB7BE"], title=f"{marker}: {outcome_label}")
+            chart.update_layout(showlegend=False, yaxis_title="% of patients", xaxis_title="")
+            finding = f"Cystatin C was above the normal limit in most patients, and the source analysis did not show a statistically clear separation for {outcome_label.lower()} (<b>{high[4]}</b>)."
+        p_text = high[4]
+        interpretation = "In this dataset, kidney-function markers provide useful context for longer-term outcomes, with creatinine showing the largest observed difference among the four markers examined. These are associations, not proof that the marker caused the outcome."
+        talk_track = f"I selected Kidney Function, then {marker}, then {outcome_label}. The chart compares patients above and below the study threshold. The key point is that the observed outcome rate is higher in the abnormal group for this marker, and the p-value shown comes directly from our prescriptive analysis."
 
-    with tabs[4]:
-        badge("Prescriptive")
-        b = df.dropna(subset=["bp_stage"])
-        g = b.groupby("bp_stage", observed=True)
-        table = pd.DataFrame({"Readmitted in 6 months": g["re_admission_within_6_months"].mean() * 100,
-                              "Died in 6 months": g["death_within_6_months"].mean() * 100})
-        st.plotly_chart(two_outcomes(table, "Low blood pressure is rare but dangerous"), width="stretch")
-        found("Only 20 patients arrived with low blood pressure (below 90), but <b>9 in 10 had symptoms at rest</b> and "
-              "<b>8 in 10 had fluid in the lungs or shock</b>. They did <b>not</b> get heart-support drips more often. "
-              "Patients with higher blood pressure came back <b>less</b> often, because their heart still has pumping strength.")
-        todo("Very low admission blood pressure is associated with higher observed risk in this dataset and can be highlighted for clinical review alongside other severity measures.")
+    # ---------------- Inflammation + albumin ----------------
+    elif area == "🩸 Inflammation & Nutrition":
+        marker = st.selectbox("2. Select Inflammation/Nutrition View", ["Inflammation + Albumin Group", "NLR", "WBC", "hs-CRP", "Albumin"])
+        outcome_label = st.selectbox("3. Select Outcome", ["28-Day Mortality", "6-Month Mortality", "6-Month Readmission"])
+        target = outcome_series(outcome_label)
+        q = insight_df.dropna(subset=["albumin"]).copy()
+        q["nlr_calc"] = q["neutrophil_count"] / q["lymphocyte_count"]
+        q["inflamed"] = ((q["hs_crp"] > 5) | (q["white_blood_cell"] > 10) | (q["nlr_calc"] > 6)).astype(int)
+        q["low_albumin"] = (q["albumin"] < 35).astype(int)
+        q["Group"] = np.select([ (q["inflamed"]==1)&(q["low_albumin"]==1), q["inflamed"]==1, q["low_albumin"]==1], ["Both", "Inflamed only", "Low albumin only"], default="Neither")
+        if marker == "Inflammation + Albumin Group":
+            table = q.groupby("Group", observed=True)[target].mean().mul(100).reindex(["Neither","Inflamed only","Low albumin only","Both"]).reset_index()
+            table.columns = ["Group","Outcome rate (%)"]
+            chart = px.bar(table, x="Group", y="Outcome rate (%)", text_auto=".1f", color="Group", color_discrete_sequence=["#9FB7BE", TEAL2, "#6CC3B0", DEATH], title=f"Inflammation + Albumin: {outcome_label}")
+            chart.update_layout(showlegend=False, yaxis_title="% of patients", xaxis_title="")
+            if outcome_label == "28-Day Mortality":
+                p_text = "p < 0.001"
+            elif outcome_label == "6-Month Mortality":
+                p_text = "p = 0.002 (Both vs Neither)"
+            else:
+                p_text = "Descriptive comparison"
+            both_rate = float(table.loc[table["Group"]=="Both","Outcome rate (%)"].iloc[0])
+            neither_rate = float(table.loc[table["Group"]=="Neither","Outcome rate (%)"].iloc[0])
+            finding = f"Patients with both inflammation and low albumin had an observed {outcome_label.lower()} rate of <b>{both_rate:.1f}%</b>, compared with <b>{neither_rate:.1f}%</b> in the Neither group."
+        else:
+            spec = {"NLR":"nlr_calc", "WBC":"white_blood_cell", "hs-CRP":"hs_crp", "Albumin":"albumin"}[marker]
+            q2=q.dropna(subset=[spec,target]).copy()
+            q2["Group"] = pd.qcut(q2[spec],4,labels=["Lowest","Low","High","Highest"] if marker != "Albumin" else ["Lowest","Low","High","Highest"], duplicates="drop")
+            table=q2.groupby("Group",observed=True)[target].mean().mul(100).reset_index(); table.columns=["Group","Outcome rate (%)"]
+            chart=px.bar(table,x="Group",y="Outcome rate (%)",text_auto=".1f",color="Group",color_discrete_sequence=RAMP,title=f"{marker}: {outcome_label} by quartile")
+            chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
+            p_text = "Source analysis: NLR/WBC showed stronger early-mortality signal than hs-CRP."
+            finding = f"Across quartiles, the observed {outcome_label.lower()} rate changes with {marker.lower()}. The chart lets you see whether the highest-marker group separates from the lowest group in this dataset."
+        interpretation = "The combined inflammation + albumin analysis showed the clearest early mortality separation when both conditions were present. NLR was also practical because it is derived from routine blood-count components and was available for most patients."
+        talk_track = f"I selected Inflammation & Nutrition, then {marker}, then {outcome_label}. I am not saying inflammation causes death; I am showing how the observed outcome rate differs across the groups created in our analysis."
 
-    # ---------- Predictive ----------
-    with tabs[5]:
-        badge("Predictive")
-        left, right = st.columns(2)
-        with left:
-            kil = df.groupby("killip_grade")[d28].mean() * 100
-            st.plotly_chart(bar([f"Killip {x}" for x in kil.index], kil.values, "Deaths within 28 days by Killip grade (%)", RAMP[1:]),
-                            width="stretch")
-        with right:
-            nyha4 = np.where(df["nyha_cardiac_function_classification"] == 4, "Symptoms at rest", "Symptoms on activity")
-            k34 = np.where(df["killip_grade"] >= 3, "Fluid in lungs / shock", "No / mild fluid")
-            grid = (pd.crosstab(nyha4, k34, values=df[d28], aggfunc="mean") * 100).round(1)
-            grid = grid.loc[["Symptoms on activity", "Symptoms at rest"], ["No / mild fluid", "Fluid in lungs / shock"]]
-            fig = px.imshow(grid, text_auto=True, color_continuous_scale=["#EAF5F8", DEATH],
-                            title="Deaths within 28 days (%): two bedside scores together")
-            fig.update_layout(coloraxis_showscale=False, xaxis_title="", yaxis_title="")
-            st.plotly_chart(style(fig), width="stretch")
-        found("A 30-second bedside exam (Killip grade) sorts patients very well. <b>None of 527 Killip 1 patients died</b> "
-              "within 28 days, while <b>1 in 4 Killip 4 patients died</b>. Adding symptom level makes it sharper: "
-              "0.4% vs <b>11.9%</b> deaths, a <b>30 times</b> difference.")
-        todo("The observed mortality gradient across Killip grades supports using current severity measures as an important part of risk review. It should not be interpreted as a standalone disposition rule.")
+    # ---------------- BNP / cardiac biomarkers ----------------
+    elif area == "❤️ Cardiac Biomarkers":
+        marker = st.selectbox("2. Select Cardiac Marker", ["BNP", "Troponin"])
+        if marker == "BNP":
+            outcome_label = st.selectbox("3. Select Outcome", ["6-Month Mortality", "6-Month Readmission", "28-Day Mortality"])
+            q=insight_df.dropna(subset=["brain_natriuretic_peptide"]).copy()
+            q["BNP group"]="Capped 5000"
+            below=q["brain_natriuretic_peptide"]<5000
+            q.loc[below,"BNP group"]=pd.qcut(q.loc[below,"brain_natriuretic_peptide"],4,labels=["Q1 (lowest)","Q2","Q3","Q4"]).astype(str)
+            target=outcome_series(outcome_label)
+            table=q.groupby("BNP group",observed=True)[target].mean().mul(100).reindex(["Q1 (lowest)","Q2","Q3","Q4","Capped 5000"]).reset_index()
+            table.columns=["BNP group","Outcome rate (%)"]
+            chart=px.bar(table,x="BNP group",y="Outcome rate (%)",text_auto=".1f",color="BNP group",color_discrete_sequence=RAMP,title=f"BNP groups: {outcome_label}")
+            chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
+            if outcome_label=="6-Month Mortality":
+                p_text="BNP ≥ 708 vs < 708: p < 0.001"
+                finding="Six-month mortality increased across the higher BNP groups, reaching about <b>6.0%</b> in the capped 5000 group versus about <b>1.3%</b> in the two lowest groups."
+            elif outcome_label=="6-Month Readmission":
+                p_text="BNP ≥ 708 comparison: source analysis reported p = 0.24 for 6-month readmission"
+                finding="Readmission showed a weaker pattern than mortality: the rates varied across BNP groups but the source analysis did not find a statistically clear 6-month readmission association."
+            else:
+                p_text="Descriptive comparison"
+                finding="Higher BNP groups showed higher observed 28-day mortality in the source analysis."
+        else:
+            outcome_label=st.selectbox("3. Select Outcome",["28-Day Mortality","6-Month Mortality"])
+            target=outcome_series(outcome_label)
+            col="troponin_i" if "troponin_i" in insight_df.columns else next((c for c in insight_df.columns if "troponin" in c.lower()),None)
+            if col is None:
+                table=pd.DataFrame({"Status":["Troponin column not available in current dashboard data"],"Outcome rate (%)":[0]})
+                chart=px.bar(table,x="Status",y="Outcome rate (%)",title="Troponin")
+                finding="The current cleaned file does not expose a troponin column with a matching name, so this marker cannot be displayed safely."
+                p_text="Not available"
+            else:
+                q=insight_df.dropna(subset=[col,target]).copy(); q["Group"]=np.where(q[col]>q[col].median(),"Above median","At/below median")
+                table=q.groupby("Group")[target].mean().mul(100).reindex(["At/below median","Above median"]).reset_index(); table.columns=["Group","Outcome rate (%)"]
+                chart=px.bar(table,x="Group",y="Outcome rate (%)",text_auto=".1f",color="Group",color_discrete_sequence=["#9FB7BE",DEATH],title=f"Troponin: {outcome_label}")
+                chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
+                finding=f"Patients above the median troponin level had an observed {outcome_label.lower()} rate of <b>{table.iloc[1,1]:.1f}%</b> versus <b>{table.iloc[0,1]:.1f}%</b> at or below the median."
+                p_text="Descriptive comparison"
+        interpretation="BNP showed a clearer relationship with mortality than with readmission in the source analysis. Biomarkers should be interpreted together with clinical severity and other patient characteristics."
+        talk_track=f"I selected Cardiac Biomarkers, then {marker}, then {outcome_label}. The chart shows how the observed outcome changes across biomarker groups; this is an association from our dataset, not a standalone decision rule."
 
-    with tabs[6]:
-        badge("Predictive")
-        hist = pd.Series({
-            "Old heart attack": df.loc[df["myocardial_infarction"] == 1, d28].mean(),
-            "No old heart attack": df.loc[df["myocardial_infarction"] == 0, d28].mean(),
-            "Past heart failure": df.loc[df["congestive_heart_failure"] == 1, d28].mean(),
-            "No past heart failure": df.loc[df["congestive_heart_failure"] == 0, d28].mean(),
-        }) * 100
-        left, right = st.columns(2)
-        with left:
-            st.plotly_chart(bar(list(hist.index), hist.values, "Prior history: observed 28-day mortality", ["#9FB7BE"] * 4),
-                            width="stretch")
-        with right:
-            kil = df.groupby("killip_grade")[d28].mean() * 100
-            st.plotly_chart(bar([f"Killip {x}" for x in kil.index], kil.values, "Current clinical severity: observed 28-day mortality", RAMP[1:]),
-                            width="stretch")
-        found("A patient's <b>past</b> (old heart attack, earlier heart failure) tells us almost nothing about who will die: "
-              "about 2% either way. How sick the patient is <b>today</b> tells us almost everything.")
-        todo("Use current severity and prior history together as complementary information during clinical review; this analysis describes associations and is not a standalone care decision rule.")
+    # ---------------- Current severity ----------------
+    elif area == "🩺 Current Clinical Severity":
+        marker = st.selectbox("2. Select Severity Measure", ["Killip Grade", "NYHA Class"])
+        outcome_label = st.selectbox("3. Select Outcome", ["In-Hospital Mortality", "28-Day Mortality", "6-Month Mortality"])
+        target=outcome_series(outcome_label)
+        col="killip_grade" if marker=="Killip Grade" else "nyha_cardiac_function_classification"
+        q=insight_df.dropna(subset=[col,target]).copy()
+        table=q.groupby(col)[target].mean().mul(100).reset_index(); table.columns=["Grade","Outcome rate (%)"]
+        table["Grade"]=table["Grade"].apply(lambda x:f"Killip {int(x)}" if marker=="Killip Grade" else f"NYHA {int(x)}")
+        chart=px.bar(table,x="Grade",y="Outcome rate (%)",text_auto=".1f",color="Outcome rate (%)",color_continuous_scale=["#EAF5F8",DEATH],title=f"{marker}: {outcome_label}")
+        chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
+        low=float(table.iloc[0,1]); high=float(table.iloc[-1,1])
+        finding=f"Observed {outcome_label.lower()} increased across the severity scale in this dataset, from <b>{low:.1f}%</b> in the lowest observed group to <b>{high:.1f}%</b> in the highest observed group."
+        p_text="Descriptive severity gradient"
+        interpretation="Current clinical severity measures describe how sick the patient is at admission. In the source analysis, Killip grade showed a particularly strong mortality gradient, making current severity an important part of risk review."
+        talk_track=f"I selected Current Clinical Severity, then {marker}, then {outcome_label}. The important point is the gradient: as the observed severity category increases, the outcome rate also changes. This is why the dashboard treats current severity as a major clinical signal."
 
-    with tabs[7]:
-        badge("Predictive")
-        left, right = st.columns(2)
-        with left:
-            q = pd.qcut(df["nlr"], 4, labels=["Lowest NLR", "Low", "High", "Highest NLR"])
-            nq = df.groupby(q, observed=True)[d28].mean() * 100
-            st.plotly_chart(bar(list(nq.index.astype(str)), nq.values, "Deaths within 28 days by NLR level (%)", RAMP[1:]),
-                            width="stretch")
-        with right:
-            avail = pd.Series({"NLR (routine blood count)": df["nlr"].notna().mean() * 100,
-                               "hs-CRP (special test)": df["hs_crp"].notna().mean() * 100})
-            st.plotly_chart(bar(list(avail.index), avail.values, "How many patients had the test (%)", [GREEN, "#9FB7BE"]),
-                            width="stretch")
-        found("NLR comes free with the routine blood count. The highest NLR group had <b>8 times</b> the early death rate "
-              "of the lowest (3.4% vs 0.4%). The special inflammation test (hs-CRP) did not help, because "
-              "<b>more than half of patients were never tested</b>.")
-        todo("Calculate NLR for every patient and flag NLR of 8.7 or more.")
+    # ---------------- Past vs current ----------------
+    elif area == "🧭 Current Severity vs Prior History":
+        marker = st.selectbox("2. Select Comparison", ["Prior Cardiac History", "Current Killip Grade"])
+        outcome_label = st.selectbox("3. Select Outcome", ["In-Hospital Mortality", "28-Day Mortality"])
+        target=outcome_series(outcome_label)
+        if marker=="Current Killip Grade":
+            q=insight_df.dropna(subset=["killip_grade",target]); table=q.groupby("killip_grade")[target].mean().mul(100).reset_index(); table.columns=["Group","Outcome rate (%)"]; table["Group"]=table["Group"].apply(lambda x:f"Killip {int(x)}")
+            chart=px.bar(table,x="Group",y="Outcome rate (%)",text_auto=".1f",color="Outcome rate (%)",color_continuous_scale=["#EAF5F8",DEATH],title=f"Current severity: {outcome_label}")
+            chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
+            finding=f"Current Killip severity showed a much wider observed mortality range than prior-history indicators: the highest Killip group had <b>{table.iloc[-1,1]:.1f}%</b> {outcome_label.lower()} compared with <b>{table.iloc[0,1]:.1f}%</b> in the lowest group."
+            p_text="Source model: severity ROC-AUC 0.87 for in-hospital death"
+        else:
+            histories={"Prior myocardial infarction":"myocardial_infarction","Prior heart failure":"congestive_heart_failure","Peripheral vascular disease":"peripheral_vascular_disease"}
+            h=st.selectbox("History item",list(histories.keys()))
+            col=histories[h]
+            q=insight_df.dropna(subset=[col,target]); table=q.groupby(col)[target].mean().mul(100).reset_index(); table["Group"]=table[col].map({0:"No history",1:"History present"}); table=table[["Group",target]].rename(columns={target:"Outcome rate (%)"})
+            chart=px.bar(table,x="Group",y="Outcome rate (%)",text_auto=".1f",color="Group",color_discrete_sequence=["#9FB7BE",TEAL2],title=f"{h}: {outcome_label}")
+            chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
+            finding=f"The observed difference associated with {h.lower()} is relatively small compared with the much larger gradient seen across current severity levels in the source analysis."
+            p_text="Source model: history-only ROC-AUC 0.49; severity-only ROC-AUC 0.87 for in-hospital death"
+        interpretation="The project analysis suggests that current clinical severity carries more discriminating information for early mortality than the selected prior-history indicators alone. Past history still provides context, but it should not be treated as a substitute for the patient's current presentation."
+        talk_track="This is the 'now versus past' analysis. I use it to explain that a diagnosis in the history section and the patient's current severity are different kinds of information. In our analysis, current severity separated mortality outcomes much more strongly."
 
-    with tabs[8]:
-        badge("Predictive")
-        alive = df[(df["outcome_during_hospitalization"] != "Dead") & (df["death_within_6_months"] == 0)].reset_index(drop=True)
-        with st.spinner("Scoring patients..."):
-            prob = cv_probs(alive, READMIT_FEATURES, "re_admission_within_6_months", "Logistic Regression", repeats=3)
-        groups = pd.qcut(prob, 5, labels=["Lowest risk", "Low", "Middle", "High", "Highest risk"])
-        by_g = alive.groupby(groups, observed=True)["re_admission_within_6_months"].mean() * 100
-        st.plotly_chart(bar(list(by_g.index.astype(str)), by_g.values,
-                            "Patients who actually came back, by predicted risk group (%)", RAMP), width="stretch")
-        found(f"Coming back is harder to predict than death, because it also depends on life outside the hospital "
-              f"(home support, taking medicines). Still, our model's <b>highest-risk group came back about twice as often</b> "
-              f"({by_g.iloc[-1]:.0f}%) as the lowest-risk group ({by_g.iloc[0]:.0f}%). Main drivers: severe symptoms, "
-              f"weak kidneys and other diseases.")
-        todo("Give the highest-risk group a follow-up phone call and an early clinic visit after discharge.")
+    # ---------------- Blood gas ----------------
+    elif area == "🫁 Blood Gas":
+        marker = st.selectbox("2. Select Blood-Gas Marker", ["Lactate", "pH", "Oxygen Saturation"])
+        outcome_label = st.selectbox("3. Select Outcome", ["In-Hospital Mortality"])
+        target=outcome_series(outcome_label)
+        configs={
+            "Lactate":("lactate",lambda x:x>2.2,"Lactate > 2.2","Lactate ≤ 2.2","p = 0.006"),
+            "pH":("ph",lambda x:x<7.35,"pH < 7.35","pH ≥ 7.35","p = 0.562"),
+            "Oxygen Saturation":("oxygen_saturation",lambda x:x<93,"O2 saturation < 93%","O2 saturation ≥ 93%","p = 0.575")}
+        col,fn,lab1,lab0,p_text=configs[marker]
+        q=insight_df.dropna(subset=[col,target]).copy(); q["Group"]=np.where(fn(q[col]),lab1,lab0)
+        table=q.groupby("Group")[target].mean().mul(100).reindex([lab0,lab1]).reset_index(); table.columns=["Group","Outcome rate (%)"]
+        chart=px.bar(table,x="Group",y="Outcome rate (%)",text_auto=".2f",color="Group",color_discrete_sequence=["#9FB7BE",DEATH],title=f"{marker}: {outcome_label}")
+        chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
+        finding=f"The source analysis found the clearest association for elevated lactate: the observed in-hospital death rate was <b>{table.iloc[1,1]:.2f}%</b> versus <b>{table.iloc[0,1]:.2f}%</b>, with <b>{p_text}</b>."
+        if marker != "Lactate":
+            finding=f"For {marker.lower()}, the observed difference in in-hospital mortality was small and the source analysis did not show a statistically clear association (<b>{p_text}</b>)."
+        interpretation="Blood-gas measures do not all behave the same way. Lactate showed the clearest signal in the source analysis, while pH and oxygen saturation did not show statistically clear differences at the selected thresholds."
+        talk_track=f"I selected Blood Gas, then {marker}. This is useful because it shows that not every abnormal-looking marker automatically carries the same outcome signal in our dataset. Lactate stood out more clearly than the other two measures."
+
+    # ---------------- Anemia ----------------
+    elif area == "🩸 Anemia":
+        marker = st.selectbox("2. Select Hemoglobin View", ["Anemia Severity"])
+        outcome_label = st.selectbox("3. Select Outcome", ["6-Month Mortality", "6-Month Readmission"])
+        target=outcome_series(outcome_label)
+        q=insight_df.dropna(subset=["anemia_level",target]).copy(); table=q.groupby("anemia_level",observed=True)[target].mean().mul(100).reset_index(); table.columns=["Anemia level","Outcome rate (%)"]
+        chart=px.bar(table,x="Anemia level",y="Outcome rate (%)",text_auto=".1f",color="Anemia level",color_discrete_sequence=RAMP,title=f"Anemia severity: {outcome_label}")
+        chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
+        finding=f"The observed {outcome_label.lower()} rate varies across anemia severity groups. In the source analysis, severe anemia showed the clearest mortality difference, while mild and moderate anemia were common but less separated."
+        p_text="Source analysis: severe anemia was associated with higher 6-month mortality"
+        interpretation="Anemia is common in the dataset, but the most notable mortality signal was concentrated in severe anemia. This supports treating anemia as one component of the broader clinical picture rather than as a standalone explanation."
+        talk_track=f"I selected Anemia and {outcome_label}. The key point is not that every degree of anemia has the same effect. The source analysis found the clearest mortality difference in the severe group."
+
+    # ---------------- Readmission ----------------
+    else:
+        marker = st.selectbox("2. Select Readmission Factor", ["NYHA Class", "Killip Grade", "CKD Stage"])
+        outcome_label = st.selectbox("3. Select Outcome", ["6-Month Readmission", "6-Month Mortality"])
+        target=outcome_series(outcome_label)
+        if marker=="NYHA Class": col="nyha_cardiac_function_classification"; prefix="NYHA"
+        elif marker=="Killip Grade": col="killip_grade"; prefix="Killip"
+        else: col="ckd_stage"; prefix="CKD"
+        q=insight_df.dropna(subset=[col,target]).copy()
+        table=q.groupby(col,observed=True)[target].mean().mul(100).reset_index(); table.columns=["Group","Outcome rate (%)"]
+        table["Group"]=table["Group"].apply(lambda x:f"{prefix} {x}" if prefix!="CKD" else str(x))
+        chart=px.bar(table,x="Group",y="Outcome rate (%)",text_auto=".1f",color="Outcome rate (%)",color_continuous_scale=["#EAF5F8",READMIT if "Readmission" in outcome_label else DEATH],title=f"{marker}: {outcome_label}")
+        chart.update_layout(showlegend=False,yaxis_title="% of patients",xaxis_title="")
+        finding=f"The observed {outcome_label.lower()} rate changes across {marker.lower()} categories. This view is intended to show the pattern across groups rather than claim that the factor alone determines an individual patient's outcome."
+        p_text="Descriptive comparison"
+        interpretation="Readmission is a different outcome from mortality and is influenced by clinical status as well as factors beyond the hospital record. The dashboard therefore presents readmission patterns separately."
+        talk_track=f"I selected Readmission Patterns, then {marker}, then {outcome_label}. I use this to explain how the outcome varies across patient groups, while recognizing that readmission is influenced by more than clinical severity alone."
+
+    # ---------------- Render selected insight ----------------
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+    left, right = st.columns([1.45, 1], gap="large")
+    with left:
+        if chart is not None:
+            st.plotly_chart(style(chart, 430), width="stretch")
+    with right:
+        st.markdown("<div class='section'>", unsafe_allow_html=True)
+        st.markdown(f"<span class='badge'>{area.replace('🫘 ','').replace('🩸 ','').replace('❤️ ','').replace('🩺 ','').replace('🧭 ','').replace('🫁 ','').replace('🔁 ','')}</span>", unsafe_allow_html=True)
+        st.markdown("### 🔎 Finding")
+        st.markdown(f"{finding}", unsafe_allow_html=True)
+        if p_text:
+            st.markdown(f"<p><b>Evidence:</b> {p_text}</p>", unsafe_allow_html=True)
+        st.markdown(f"<div class='found'><b>What this means:</b> {interpretation}</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with st.expander("🗣️ How to explain this in your presentation"):
+        st.write(talk_track)
+        st.caption("Tip: explain the selected group, the observed outcome difference, and what the statistical evidence says. Avoid describing an association as proof of causation.")
+
+    st.markdown("""
+    <div class='section'>
+    <h3 style='color:#073B4C;margin-top:0'>⭐ Overall project takeaways</h3>
+    <div class='found'><b>1. Current severity matters.</b> NYHA and especially Killip provide a direct view of how sick the patient is at admission, and the analysis shows clear mortality gradients across severity levels.</div>
+    <div class='found'><b>2. Kidney function adds important context.</b> eGFR, creatinine and urea were associated with higher observed 6-month mortality/readmission, with creatinine showing the largest differences among the kidney markers tested.</div>
+    <div class='found'><b>3. Biomarkers are outcome-specific.</b> BNP showed a clearer relationship with mortality than with readmission, while NLR showed a useful early-mortality signal.</div>
+    <div class='found'><b>4. Readmission and mortality should be examined separately.</b> Returning to hospital is influenced by clinical and non-clinical factors, so the same marker does not necessarily behave the same way for both outcomes.</div>
+    <div class='found'><b>5. The ANN belongs at the end of the story.</b> The predictive model combines multiple patient characteristics into an analytical risk estimate after the descriptive and clinical patterns have been understood.</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # =====================================================================
