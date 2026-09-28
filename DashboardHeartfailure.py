@@ -201,115 +201,40 @@ with st.sidebar:
     st.markdown("<div style='text-align:center;font-size:48px'>❤️</div>"
                 "<h2 style='text-align:center;margin:0'>Cardiac Failure</h2>"
                 "<p style='text-align:center'>Team 2 • PythonPioneers</p>", unsafe_allow_html=True)
-    page = st.radio("NAVIGATION", ["🏠 Introduction", "📘 Data Overview", "🧹 Data Cleaning & Features",
-                                   "📊 Insights", "🤖 Model Performance", "📌 Key Takeaways & Conclusion"],
-                    label_visibility="collapsed")
+    page = st.radio("NAVIGATION", ["🏠 Introduction", "📘 Data Overview", "🧹 Data Cleaning", "🧬 Feature Engineering", "📊 Descriptive & Prescriptive Analysis", "👤 Patient Explorer", "📊 Model Performance", "⭐ Key Insights & Takeaways", "🏁 Conclusion"], label_visibility="collapsed")
 
 
 # =====================================================================
 # 1. INTRODUCTION
 # =====================================================================
 if page == "🏠 Introduction":
-    st.markdown("<div class='hdr'><h1>❤️ Cardiac Failure Analytics</h1>"
-                "<p>Spotting high-risk heart failure patients on the day they are admitted</p></div>", unsafe_allow_html=True)
+    st.markdown("<div class='hdr'><h1>❤️ Cardiac Failure Analytics</h1><p>Heart-failure clinical analytics and mortality-risk exploration</p></div>", unsafe_allow_html=True)
+    st.markdown("""<div class='section'><h3 style='color:#073B4C;margin-top:0'>Project Information</h3>
+    <p><b>Project Name:</b> Cardiac Failure Analytics</p>
+    <p><b>Team Name:</b> PythonPioneers</p>
+    <p><b>Team Members:</b> Saranya Shanmugam, Aditi, Sudha</p>
+    <p><b>Project Focus:</b> Clinical analytics of heart-failure patients and Artificial Neural Network-based mortality risk estimation.</p></div>""", unsafe_allow_html=True)
 
-    st.markdown("""
-<div class='section'>
-<h3 style='color:#073B4C;margin-top:0'>Project: Cardiac Failure</h3>
-Heart failure patients arrive at hospital very sick, and <b>more than 1 in 3 come back within 6 months</b>.
-Every return costs a hospital bed and money, and some early deaths could be prevented with closer watching.
-<br><br>
-<b>Our goal:</b> use hospital data to find <b>which patients need extra care</b>, and show that the hospital
-can spot them <b>on day 1</b> using tests it already does.
-</div>
-""", unsafe_allow_html=True)
+if page == "📘 Data Overview":
+    st.markdown("<div class='hdr'><h1>📘 Data Overview</h1><p>What this project studies and what the hospital dataset contains</p></div>", unsafe_allow_html=True)
+    st.markdown("""<div class='section'><h3 style='color:#073B4C;margin-top:0'>What is this project about?</h3>
+    <p>This project uses hospital heart-failure data to examine patient characteristics, clinical severity, laboratory and cardiac measurements, hospital outcomes, and mortality-risk patterns.</p>
+    <p>The dashboard brings together <b>descriptive analysis</b>, <b>clinical review of observed associations</b>, and <b>predictive modeling</b> so the same dataset can be explored from population level to individual patient level.</p>
+    </div>""", unsafe_allow_html=True)
+    c1,c2,c3,c4=st.columns(4)
+    c1.metric("Patients",f"{len(df):,}")
+    c2.metric("Variables",f"{df.shape[1]:,}")
+    c3.metric("Unique patients",f"{df['inpatient_number'].nunique():,}" if 'inpatient_number' in df.columns else "—")
+    c4.metric("Data type","Hospital clinical data")
+    st.markdown("""<div class='section'><h3 style='color:#073B4C;margin-top:0'>What does the dataset contain?</h3>
+    <p><b>Patient profile:</b> demographics, age, weight, height and BMI.</p>
+    <p><b>Cardiac severity:</b> NYHA, Killip, heart-failure characteristics and cardiac measurements.</p>
+    <p><b>Laboratory and biomarkers:</b> inflammation, nutrition, kidney function, cardiac injury, electrolytes, blood-gas and other clinical measurements.</p>
+    <p><b>Hospital course and outcomes:</b> admission information, length of stay, discharge destination, mortality, readmission and emergency-department return outcomes where available.</p>
+    <p><b>Medication information:</b> patient-level medication indicators derived from prescription records.</p>
+    </div>""", unsafe_allow_html=True)
 
-    st.subheader("Team 2 • PythonPioneers")
-    team = [("Aditi Mishra", "Team Lead"), ("Saranya Shanmugam", "Team Member"),
-            ("Sashi Laguduva", "Team Member"), ("Sudha Madhuri Basa", "Team Member")]
-    cols = st.columns(4)
-    for col, (name, role) in zip(cols, team):
-        with col:
-            st.markdown(f"<div class='member'><div style='font-size:30px'>👤</div>"
-                        f"<div class='n'>{name}</div><div class='r'>{role}</div></div>", unsafe_allow_html=True)
-
-    st.write("")
-    st.subheader("Questions we answer")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.info("**Descriptive**\n\nWho are the patients and what happens to them?")
-    with c2:
-        st.info("**Prescriptive**\n\nWhich body systems raise the risk, and what should the hospital do?")
-    with c3:
-        st.info("**Predictive**\n\nCan we flag high-risk patients at admission?")
-
-
-# =====================================================================
-# 2. DATA OVERVIEW
-# =====================================================================
-elif page == "📘 Data Overview":
-    st.markdown("<div class='hdr'><h1>📘 Data Overview</h1><p>What data we used and what it looks like</p></div>",
-                unsafe_allow_html=True)
-
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: kpi("👥", "Patients", f"{df['inpatient_number'].nunique():,}")
-    with c2: kpi("🗂️", "Source tables", "7")
-    with c3: kpi("📋", "Columns after cleaning", "210")
-    with c4: kpi("📅", "Admission years", f"{pd.to_datetime(df['admission_date']).dt.year.min()}–{pd.to_datetime(df['admission_date']).dt.year.max()}"
-                 if "admission_date" in df.columns else "2016–2019")
-
-    st.write("")
-    left, right = st.columns([1.1, 1])
-    with left:
-        st.markdown("""
-<div class='section'>
-<h4 style='color:#073B4C;margin-top:0'>The 7 tables (joined by patient ID)</h4>
-
-| Table | What it holds |
-|---|---|
-| Demography | Gender, age group, height, weight, BMI, job |
-| Cardiac | Symptom level (NYHA), fluid / shock level (Killip), heart scan |
-| Patient history | Other diseases: diabetes, kidney disease, COPD... |
-| Hospitalization | Stay length, deaths and returns to hospital |
-| Labs | 100+ blood tests and vital signs at admission |
-| Responsiveness | Alertness (Glasgow Coma Scale) |
-| Prescriptions | 25 medicines given during the stay |
-</div>
-""", unsafe_allow_html=True)
-    with right:
-        out = pd.DataFrame({
-            "Time": ["28 days", "3 months", "6 months"] * 2,
-            "Outcome": ["Came back to hospital"] * 3 + ["Died"] * 3,
-            "Percent": [df[c].mean() * 100 for c in ["re_admission_within_28_days", "re_admission_within_3_months",
-                                                      "re_admission_within_6_months", "death_within_28_days",
-                                                      "death_within_3_months", "death_within_6_months"]]})
-        fig = px.bar(out, x="Time", y="Percent", color="Outcome", barmode="group", text_auto=".1f",
-                     color_discrete_map={"Came back to hospital": READMIT, "Died": DEATH},
-                     title="What happened after discharge (%)")
-        fig.update_layout(xaxis_title="", yaxis_title="% of patients")
-        st.plotly_chart(style(fig, 360), width="stretch")
-
-    c1, c2 = st.columns(2)
-    with c1:
-        ag = df.groupby(["agecat", "gender"]).size().reset_index(name="Patients")
-        fig = px.bar(ag, x="agecat", y="Patients", color="gender", barmode="group", title="Patients by age group and gender",
-                     color_discrete_map={"Female": TEAL2, "Male": NAVY})
-        fig.update_layout(xaxis_title="Age group")
-        st.plotly_chart(style(fig), width="stretch")
-    with c2:
-        sev = df["nyha_cardiac_function_classification"].value_counts().sort_index()
-        st.plotly_chart(bar([f"NYHA {i}" for i in sev.index], sev.values, "Symptom level at admission (NYHA)",
-                            RAMP[1:], ytitle="Patients", fmt=","), width="stretch")
-
-    st.markdown("<div class='found'><b>In short:</b> an elderly group (73% aged 69+), mostly women (58%), and very sick "
-                "on arrival (82% with symptoms on light activity or at rest). <b>Returning to hospital is far more "
-                "common than dying.</b></div>", unsafe_allow_html=True)
-
-
-# =====================================================================
-# 3. DATA CLEANING & FEATURE ENGINEERING
-# =====================================================================
-elif page == "🧹 Data Cleaning & Features":
+if page == "🧹 Data Cleaning & Features":
     st.markdown("<div class='hdr'><h1>🧹 Data Cleaning & Feature Engineering</h1>"
                 "<p>From 7 messy tables to 1 trusted table (one row per patient)</p></div>", unsafe_allow_html=True)
 
@@ -383,7 +308,7 @@ elif page == "📊 Insights":
 
     d28 = "death_within_28_days"
     tabs = st.tabs(["👥 Patients", "💊 Medicines", "🫘 Kidneys", "🩸 Anemia", "🩺 Blood Pressure",
-                    "🛏️ Bedside Check", "🕰️ Now vs Past", "🧪 Blood Test", "🔁 Who Comes Back"])
+                    "🛏️ Bedside Check", "🕰️ Current Clinical Severity vs Prior History", "🧪 Blood Test", "🔁 Who Comes Back"])
 
     # ---------- Descriptive ----------
     with tabs[0]:
@@ -689,7 +614,7 @@ patients and tested on the other 1/5, five times over (5-fold cross-validation),
 # =====================================================================
 # 6. KEY TAKEAWAYS & CONCLUSION
 # =====================================================================
-elif page == "📌 Key Takeaways & Conclusion":
+elif page == "⭐ Key Insights & Takeaways":
     st.markdown("<div class='hdr'><h1>📌 Key Takeaways & Conclusion</h1><p>What we learned and what the hospital can do</p></div>",
                 unsafe_allow_html=True)
 
