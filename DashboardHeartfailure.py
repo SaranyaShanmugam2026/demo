@@ -402,7 +402,7 @@ elif page == "🧹 Data Cleaning & Feature Engineering":
 # =====================================================================
 # 4. INSIGHTS  (guided: Insight Area -> Marker -> Outcome)
 # =====================================================================
-elif page == "📊 Insights":
+elif page == "📊 Interactive Clinical Insights":
     st.markdown("<div class='dash-title'>📊 Cardiac Failure Dashboard</div>", unsafe_allow_html=True)
 
     c1, c2, c3, c4 = st.columns(4)
