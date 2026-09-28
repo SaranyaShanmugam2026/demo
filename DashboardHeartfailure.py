@@ -397,69 +397,321 @@ elif page == "💡 Prescriptive Analysis":
             st.caption("Review implication: use the observed pattern to identify patients or groups for closer review; do not interpret this dashboard as a treatment order.")
 
 # ----------------------------- PREDICTIVE -----------------------------
+# ----------------------------- PREDICTIVE -----------------------------
 elif page == "🤖 Predictive Analytics":
     st.title("Predictive Analytics")
-    st.caption("Predictive analytics is separate from model performance: this page is for risk estimation and patient-level prediction; the next page evaluates model quality.")
-    target_options=[k for k,v in outcome_cols.items() if v]
-    target_label=st.selectbox("Prediction target",target_options,index=0 if target_options else None)
-    target=outcome_cols[target_label] if target_options else None
-    numeric_candidates=[c for c in [age_col,bmi_col,nyha_col,killip_col,crp_col,wbc_col,nlr_col,albumin_col,find_col(["brain_natriuretic_peptide"]),find_col(["creatinine_enzymatic_method"]),find_col(["egfr"]),find_col(["hemoglobin"]),find_col(["lvef"]),find_col(["lvedd_mm"])] if c]
-    numeric_candidates=list(dict.fromkeys(numeric_candidates))
-    if target and len(numeric_candidates)>=2:
-        md=df[numeric_candidates].copy(); X=md.apply(pd.to_numeric,errors="coerce"); y=binary_series(target)
-        valid=y.notna(); X=X.loc[valid]; y=y.loc[valid].astype(int)
-        if y.nunique()==2 and y.value_counts().min()>=5:
-            Xtr,Xte,ytr,yte=train_test_split(X,y,test_size=.2,random_state=42,stratify=y)
-            model=Pipeline([("impute",SimpleImputer(strategy="median")),("scale",StandardScaler()),("ann",MLPClassifier(hidden_layer_sizes=(64,32),max_iter=500,random_state=42,early_stopping=True))])
-            model.fit(Xtr,ytr)
-           proba = model.predict_proba(Xte)[:, 1]
 
-# Descriptive risk bands for dashboard exploration.
-# These are NOT clinical treatment thresholds.
-risk_20 = int((proba >= 0.20).sum())
-
-c1, c2, c3, c4 = st.columns(4)
-
-with c1:
-    kpi(
-        "👥",
-        "Test patients",
-        f"{len(yte):,}"
+    st.caption(
+        "This section answers: Can the Artificial Neural Network (ANN) "
+        "estimate the probability of the selected outcome?"
     )
 
-with c2:
-    kpi(
-        "📈",
-        "Mean predicted risk",
-        f"{proba.mean()*100:.1f}%"
+    # ---------------------------------------------------------
+    # 1. SELECT PREDICTION TARGET
+    # ---------------------------------------------------------
+    target_options = [k for k, v in outcome_cols.items() if v]
+
+    target_label = st.selectbox(
+        "Prediction target",
+        target_options,
+        index=0 if target_options else None
     )
 
-with c3:
-    kpi(
-        "🔴",
-        "Highest predicted risk",
-        f"{proba.max()*100:.1f}%"
-    )
+    target = outcome_cols[target_label] if target_options else None
 
-with c4:
-    kpi(
-        "⚠️",
-        "Patients ≥20% risk",
-        f"{risk_20:,}"
-    )
-            st.subheader("Patient risk explorer")
-            vals={}
-            cols=st.columns(3)
-            for i,c in enumerate(numeric_candidates):
-                s=X[c].dropna();
+    # ---------------------------------------------------------
+    # 2. SELECT PREDICTOR VARIABLES
+    # ---------------------------------------------------------
+    numeric_candidates = [
+        c for c in [
+            age_col,
+            bmi_col,
+            nyha_col,
+            killip_col,
+            crp_col,
+            wbc_col,
+            nlr_col,
+            albumin_col,
+            find_col(["brain_natriuretic_peptide"]),
+            find_col(["creatinine_enzymatic_method"]),
+            find_col(["egfr"]),
+            find_col(["hemoglobin"]),
+            find_col(["lvef"]),
+            find_col(["lvedd_mm"])
+        ]
+        if c
+    ]
+
+    numeric_candidates = list(dict.fromkeys(numeric_candidates))
+
+    # ---------------------------------------------------------
+    # 3. BUILD ANN MODEL
+    # ---------------------------------------------------------
+    if target and len(numeric_candidates) >= 2:
+
+        md = df[numeric_candidates].copy()
+
+        X = md.apply(
+            pd.to_numeric,
+            errors="coerce"
+        )
+
+        y = binary_series(target)
+
+        valid = y.notna()
+
+        X = X.loc[valid]
+        y = y.loc[valid].astype(int)
+
+        if y.nunique() == 2 and y.value_counts().min() >= 5:
+
+            # -------------------------------------------------
+            # TRAIN / TEST SPLIT
+            # -------------------------------------------------
+            Xtr, Xte, ytr, yte = train_test_split(
+                X,
+                y,
+                test_size=0.20,
+                random_state=42,
+                stratify=y
+            )
+
+            # -------------------------------------------------
+            # ANN MODEL
+            # -------------------------------------------------
+            model = Pipeline([
+                (
+                    "impute",
+                    SimpleImputer(strategy="median")
+                ),
+                (
+                    "scale",
+                    StandardScaler()
+                ),
+                (
+                    "ann",
+                    MLPClassifier(
+                        hidden_layer_sizes=(64, 32),
+                        max_iter=500,
+                        random_state=42,
+                        early_stopping=True
+                    )
+                )
+            ])
+
+            model.fit(Xtr, ytr)
+
+            # ANN probability for positive outcome
+            proba = model.predict_proba(Xte)[:, 1]
+
+            # -------------------------------------------------
+            # 4. DASHBOARD KPIs
+            # -------------------------------------------------
+
+            # Descriptive dashboard band.
+            # This is NOT a clinical treatment threshold.
+            risk_20 = int((proba >= 0.20).sum())
+
+            c1, c2, c3, c4 = st.columns(4)
+
+            with c1:
+                kpi(
+                    "👥",
+                    "Test patients",
+                    f"{len(yte):,}"
+                )
+
+            with c2:
+                kpi(
+                    "📈",
+                    "Mean predicted risk",
+                    f"{proba.mean() * 100:.1f}%"
+                )
+
+            with c3:
+                kpi(
+                    "🔴",
+                    "Highest predicted risk",
+                    f"{proba.max() * 100:.1f}%"
+                )
+
+            with c4:
+                kpi(
+                    "⚠️",
+                    "Patients ≥20% risk",
+                    f"{risk_20:,}"
+                )
+
+            # -------------------------------------------------
+            # 5. EXPLAIN THE ANN OUTPUT
+            # -------------------------------------------------
+
+            st.markdown(
+                """
+                <div class='note'>
+                <b>How to interpret these results</b><br><br>
+
+                The ANN uses demographic, cardiac, laboratory and
+                nutritional characteristics to estimate the probability
+                of the selected outcome for each patient.<br><br>
+
+                <b>Mean predicted risk</b> = average probability estimated
+                across the test patients.<br>
+
+                <b>Highest predicted risk</b> = highest probability
+                estimated for one test patient.<br>
+
+                <b>Patients ≥20% risk</b> = a descriptive dashboard group
+                used to explore the model's risk distribution. It is not
+                a validated clinical threshold.<br><br>
+
+                These probabilities are model estimates and are not
+                clinical diagnoses or treatment recommendations.
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            # -------------------------------------------------
+            # 6. RISK DISTRIBUTION
+            # -------------------------------------------------
+
+            st.subheader("ANN predicted-risk distribution")
+
+            risk_df = pd.DataFrame({
+                "Predicted risk (%)": proba * 100
+            })
+
+            fig = px.histogram(
+                risk_df,
+                x="Predicted risk (%)",
+                nbins=20,
+                title=f"ANN-estimated risk distribution — {target_label}",
+                labels={
+                    "Predicted risk (%)": "Estimated probability (%)"
+                }
+            )
+
+            fig.add_vline(
+                x=20,
+                line_dash="dash",
+                annotation_text="20% descriptive band"
+            )
+
+            st.plotly_chart(
+                fig,
+                use_container_width=True
+            )
+
+            # -------------------------------------------------
+            # 7. MODEL FLOW
+            # -------------------------------------------------
+
+            st.subheader("How the prediction works")
+
+            st.markdown(
+                """
+                <div class='section'>
+                <b>Patient characteristics</b>
+                → Age, BMI, NYHA, Killip, BNP, creatinine,
+                eGFR, albumin, inflammation markers, LVEF, LVEDD
+                <br><br>
+                ↓
+                <br><br>
+                <b>Artificial Neural Network</b>
+                <br><br>
+                ↓
+                <br><br>
+                <b>Estimated probability of the selected outcome</b>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            # -------------------------------------------------
+            # 8. PATIENT RISK EXPLORER
+            # -------------------------------------------------
+
+            st.subheader("Patient Risk Explorer")
+
+            st.write(
+                "Enter patient characteristics to see the probability "
+                "estimated by the ANN."
+            )
+
+            vals = {}
+
+            input_cols = st.columns(3)
+
+            for i, c in enumerate(numeric_candidates):
+
+                s = X[c].dropna()
+
                 if len(s):
-                    with cols[i%3]: vals[c]=st.number_input(str(c).replace("_"," ").title(),float(s.min()),float(s.max()),float(s.median()))
-            if st.button("Calculate patient risk",type="primary"):
-                row=pd.DataFrame([vals],columns=numeric_candidates)
-                p=float(model.predict_proba(row)[0,1]); st.metric("Predicted probability",f"{p*100:.1f}%"); st.progress(p)
-                st.warning("Research model only. This probability is not a clinical diagnosis or treatment recommendation.")
-        else: st.warning("The selected outcome does not have enough usable positive/negative observations for a stable demonstration model.")
 
+                    with input_cols[i % 3]:
+
+                        vals[c] = st.number_input(
+                            str(c)
+                            .replace("_", " ")
+                            .title(),
+                            min_value=float(s.min()),
+                            max_value=float(s.max()),
+                            value=float(s.median())
+                        )
+
+            if st.button(
+                "Calculate patient risk",
+                type="primary"
+            ):
+
+                row = pd.DataFrame(
+                    [vals],
+                    columns=numeric_candidates
+                )
+
+                patient_probability = float(
+                    model.predict_proba(row)[0, 1]
+                )
+
+                st.metric(
+                    "Predicted probability",
+                    f"{patient_probability * 100:.1f}%"
+                )
+
+                st.progress(
+                    min(max(patient_probability, 0.0), 1.0)
+                )
+
+                st.info(
+                    f"For the selected outcome ({target_label}), "
+                    f"the ANN estimates a probability of "
+                    f"{patient_probability * 100:.1f}% "
+                    f"for these entered characteristics."
+                )
+
+                st.warning(
+                    "Research model only. This probability is not a "
+                    "clinical diagnosis or treatment recommendation."
+                )
+
+        else:
+
+            st.warning(
+                "The selected outcome does not have enough usable "
+                "positive and negative observations for a stable "
+                "demonstration model."
+            )
+
+    else:
+
+        st.warning(
+            "Not enough predictor variables were detected in the "
+            "cleaned dataset to build the ANN demonstration."
+        )
+
+
+# ----------------------------- MODEL PERFORMANCE -----------------------------
 # ----------------------------- MODEL PERFORMANCE -----------------------------
 elif page == "📊 Model Performance":
     st.title("Model Performance & Model Comparison")
