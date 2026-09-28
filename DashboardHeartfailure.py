@@ -280,22 +280,31 @@ with st.sidebar:
 # 1. INTRODUCTION
 # =====================================================================
 if page == "🏠 Introduction":
-    team = [("Aditi Mishra", "Team Member", NAVY), ("Saranya Shanmugam", "Team Member", GREEN),
-            ("Sahi Laguduva", "Team Member", BLUE), ("Sudha Madhuri Basa", "Team Member", ALERT)]
+    team = [("Aditi Mishra", "Team Lead", NAVY), ("Saranya Shanmugam", "Team Member", GREEN),
+            ("Sashi Laguduva", "Team Member", BLUE), ("Sudha Madhuri Basa", "Team Member", ALERT)]
     members = "".join(
         f"<div class='tm'><div class='av' style='background:{c}'>👤</div>"
         f"<div><div class='nm' style='color:{c}'>{n}</div><div class='rl' style='border-color:{c}'>{r}</div></div></div>"
         for n, r, c in team)
+    heart_svg = (
+        "<svg viewBox='0 0 220 200' width='300' style='position:absolute;right:50px;top:40px;opacity:.95'>"
+        "<defs><linearGradient id='hg' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#E86A7A'/>"
+        "<stop offset='1' stop-color='#B8324A'/></linearGradient></defs>"
+        "<path d='M110 185 C 30 125, 5 75, 40 38 C 70 8, 102 22, 110 50 C 118 22, 150 8, 180 38 C 215 75, 190 125, 110 185 Z' fill='url(#hg)'/>"
+        "<polyline points='20,105 70,105 85,80 100,135 118,55 135,120 148,105 200,105' fill='none' stroke='white' "
+        "stroke-width='7' stroke-linejoin='round' stroke-linecap='round'/></svg>")
     st.markdown(
-        f"<div class='hero'>"
-        "<p class='t1'>CARDIAC_CLEANED_DATA</p>"
-        "<p class='t2'>HEART FAILURE CLINICAL ANALYTICS</p>"
-        "<p class='sub' style='text-align:center;font-weight:700;margin-bottom:4px'>Dataset: Cardiac_Cleaned_Data.xlsb</p>"
+        f"<div class='hero'>{heart_svg}"
+        "<p class='t1'>CARDIAC FAILURE</p>"
+        "<p class='t2'>HEART FAILURE DATASET</p>"
+        "<div class='sub'>Spotting high-risk heart failure patients on the day they are admitted</div>"
         "<div class='line'></div>"
-        "<div style='text-align:center'><span class='pill'>TEAM PYTHON PIONEERS</span>"
+        "<div style='text-align:center'><span class='pill'>TEAM 2: PYTHONPIONEERS</span>"
         "<div class='meet'>—— MEET OUR TEAM ——</div></div>"
         f"<div style='display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px'>{members}</div>"
-        "</div>", unsafe_allow_html=True)
+        "<div class='herobar'><span>⭐ Early Risk Detection</span><span>❤️ Better Decisions</span>"
+        "<span>👥 Healthier Hearts</span></div></div>", unsafe_allow_html=True)
+
 
 # =====================================================================
 # 2. DATA OVERVIEW
@@ -308,47 +317,63 @@ elif page == "📘 Data Overview":
                 unsafe_allow_html=True)
 
     years = pd.to_datetime(df["admission_date"])
+    spec_rows = [("👥", "Patients", f"{len(df):,} hospitalised heart failure patients"),
+                 ("🗂️", "Source", "7 hospital tables, linked by patient ID"),
+                 ("📅", "Admissions", f"{years.dt.year.min()} – {years.dt.year.max()}"),
+                 ("⏱️", "Follow-up", "28 days, 3 months, 6 months"),
+                 ("🧪", "Tests", "100+ blood tests and vital signs"),
+                 ("💊", "Medicines", "25 drugs given in hospital"),
+                 ("📋", "Final table", "2,008 rows × 210 columns")]
+    spec = "".join(f"<div class='row'><div class='ic'>{i}</div><div><div class='k'>{k}:</div><div class='v'>{v}</div></div></div>"
+                   for i, k, v in spec_rows)
 
-    # Compact, presentation-friendly overview: designed to fit on one screen.
-    k1, k2, k3, k4, k5 = st.columns(5)
-    with k1: kpi2("👥", "Patients", f"{len(df):,}")
-    with k2: kpi2("🗂️", "Source tables", "7")
-    with k3: kpi2("📋", "Final dataset", f"{df.shape[1]} columns")
-    with k4: kpi2("🧪", "Clinical measures", "100+")
-    with k5: kpi2("💊", "Medicines", "25")
+    left, right = st.columns([1, 3.2])
+    with left:
+        st.markdown(f"<div class='spec'><h3>Cardiac Failure<br>Dataset Specifications</h3>{spec}</div>", unsafe_allow_html=True)
 
-    st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
+    def mini(fig):
+        fig.update_layout(template="plotly_white", height=150, margin=dict(t=5, l=5, r=5, b=5), showlegend=False,
+                          xaxis_title="", yaxis_title="", font_size=10)
+        fig.update_traces(selector=dict(type="pie"), textinfo="none")
+        return fig
 
-    overview_cards = [
-        ("🧍", "DEMOGRAPHY", NAVY, "Gender • age group • height • weight • BMI • occupation"),
-        ("❤️", "CARDIAC", ALERT, "NYHA • Killip • heart-failure type • LVEF • LVEDD • echo measures"),
-        ("📜", "HISTORY & COMORBIDITY", GREEN, "Diabetes • kidney disease • COPD • liver disease • CCI"),
-        ("🏥", "HOSPITAL & OUTCOMES", BLUE, "Admission • length of stay • discharge • mortality • readmission • ED return"),
-        ("🧪", "LABORATORY", TEAL2, "BNP • troponin • kidney markers • electrolytes • blood count • inflammation"),
-        ("🧠", "RESPONSIVENESS", "#6C4AB6", "GCS • eye opening • verbal response • motor response • alertness"),
-        ("💊", "PRESCRIPTIONS", "#E07A5F", "25 medicines • heart medicines • diuretics • anticoagulants • medication burden"),
-        ("✨", "ENGINEERED FEATURES", TEAL, "BMI/BP groups • CKD stage • anemia • NLR • comorbidity • warning flags"),
+    cards = [
+        ("🧍", "DEMOGRAPHY", NAVY, ["Gender", "Age group", "Height, weight, BMI", "Occupation"],
+         lambda: px.bar(df["agecat"].value_counts().sort_index(), color_discrete_sequence=[NAVY])),
+        ("❤️", "CARDIAC", ALERT, ["NYHA class (symptoms)", "Killip grade (fluid/shock)", "Heart failure type", "Heart scan (LVEF)"],
+         lambda: px.bar(df["nyha_cardiac_function_classification"].value_counts().sort_index(), color_discrete_sequence=[ALERT])),
+        ("📜", "HISTORY", GREEN, ["Diabetes", "Kidney disease", "COPD, liver disease", "Comorbidity score"],
+         lambda: px.bar(pd.Series({"Kidney": df["moderate_to_severe_chronic_kidney_disease"].mean(),
+                                   "Diabetes": df["diabetes"].mean(),
+                                   "COPD": df["chronic_obstructive_pulmonary_disease"].mean()}) * 100,
+                        color_discrete_sequence=[GREEN])),
+        ("🏥", "HOSPITAL STAY", BLUE, ["Admission type", "Days in hospital", "Death: 28d / 3m / 6m", "Readmission: 28d / 3m / 6m"],
+         lambda: px.bar(pd.Series({"Came back": df["re_admission_within_6_months"].mean(),
+                                   "Died": df["death_within_6_months"].mean()}) * 100,
+                        color=["Came back", "Died"], color_discrete_sequence=[READMIT, DEATH])),
+        ("🧪", "LABS", TEAL2, ["BNP (heart strain)", "Troponin (heart damage)", "Kidney tests (eGFR)", "Blood count, salts"],
+         lambda: px.histogram(np.log10(df["brain_natriuretic_peptide"].dropna()), nbins=25, color_discrete_sequence=[TEAL2])),
+        ("🧠", "RESPONSIVENESS", "#6C4AB6", ["Eye opening", "Verbal response", "Movement", "GCS score (alertness)"],
+         lambda: px.pie(values=df["gcs_category"].value_counts().values, names=df["gcs_category"].value_counts().index,
+                        hole=.6, color_discrete_sequence=["#6C4AB6", "#B9A6E3", "#D8CCF1", "#EDE7F8"])),
+        ("💊", "PRESCRIPTIONS", "#E07A5F", ["25 medicines", "Water tablets", "Heart medicines", "Medicines per patient"],
+         lambda: px.histogram(df["total_drugs"], nbins=16, color_discrete_sequence=["#E07A5F"])),
+        ("✨", "DERIVED FEATURES", TEAL, ["BMI / BP groups", "Kidney stage, anemia level", "Warning flags", "NLR, comorbidity count"],
+         lambda: px.pie(values=df["bmi_category"].value_counts().values, names=df["bmi_category"].value_counts().index,
+                        hole=.6, color_discrete_sequence=[TEAL, "#6CC3B0", "#B7E4D8", NAVY])),
     ]
-    for row in (overview_cards[:4], overview_cards[4:]):
-        cols = st.columns(4)
-        for col, (ic, nm, colr, desc) in zip(cols, row):
-            with col:
-                st.markdown(
-                    f"<div style='background:white;border-radius:14px;padding:11px 12px;height:82px;"
-                    f"box-shadow:0 3px 12px rgba(0,0,0,.06);border-top:5px solid {colr};'>"
-                    f"<div style='font-size:20px;line-height:1'>{ic}</div>"
-                    f"<div style='font-weight:900;font-size:12px;color:{colr};margin:2px 0 3px'>{nm}</div>"
-                    f"<div style='font-size:10.5px;line-height:1.18;color:#073B4C'>{desc}</div></div>",
-                    unsafe_allow_html=True)
+    with right:
+        for row in (cards[:4], cards[4:]):
+            cols = st.columns(4)
+            for col, (ic, nm, colr, items, chart) in zip(cols, row):
+                with col:
+                    with st.container(border=True):
+                        bullets = "".join(f"<li>{x}</li>" for x in items)
+                        st.markdown(f"<div class='card-h'><div class='ic'>{ic}</div>"
+                                    f"<div class='nm' style='color:{colr}'>{nm}</div><ul>{bullets}</ul></div>",
+                                    unsafe_allow_html=True)
+                        st.plotly_chart(mini(chart()), width="stretch", config={"displayModeBar": False})
 
-    st.markdown(
-        f"<div style='background:#073B4C;color:white;border-radius:12px;padding:8px 14px;margin-top:7px;"
-        f"font-size:11px;text-align:center'>📅 Admission period: <b>{years.dt.year.min()}–{years.dt.year.max()}</b>"
-        f" &nbsp; • &nbsp; ⏱️ Follow-up: <b>28 days, 3 months, 6 months</b>"
-        f" &nbsp; • &nbsp; 🔗 One patient-level record per row</div>", unsafe_allow_html=True)
-
-
-    st.markdown("</div>", unsafe_allow_html=True)
 
 # =====================================================================
 # 3. DATA CLEANING & FEATURE ENGINEERING
