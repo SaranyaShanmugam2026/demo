@@ -1,6 +1,6 @@
 # =====================================================================
 #  Cardiac Failure Analytics Dashboard
-#  Team 2 - PythonPioneers | NumpyNinja Python Hackathon
+#  Team Python Pioneers | NumpyNinja Python Hackathon
 #
 #  Run:  streamlit run DashboardHeartfailure.py
 #  Data: Cardiac_Cleaned_Data.xlsb (or Cardiac_Cleaned_Data.csv) in the same folder
@@ -159,6 +159,18 @@ except Exception as e:
     st.error(f"Could not load the cleaned data file: {e}")
     st.stop()
 
+# Descriptive demographic columns used in the Data Overview section.
+def find_col(names):
+    lookup = {str(c).strip().lower(): c for c in df.columns}
+    for name in names:
+        if name.lower() in lookup:
+            return lookup[name.lower()]
+    return None
+
+gender_col = find_col(["gender", "sex"])
+agecat_col = find_col(["agecat", "age_category"])
+bmi_col = find_col(["bmi"])
+
 # Model inputs (admission-time data only)
 DEATH_FEATURES = ["nyha_cardiac_function_classification", "killip_grade", "bnp_log", "troponin_log",
                   "nlr_log", "albumin", "hemoglobin", "sodium"]
@@ -200,7 +212,7 @@ def cv_probs(data, features, target, model_name, repeats=1):
 with st.sidebar:
     st.markdown("<div style='text-align:center;font-size:48px'>❤️</div>"
                 "<h2 style='text-align:center;margin:0'>HeartFailure</h2>"
-                "<p style='text-align:center'>Team Pycore</p>", unsafe_allow_html=True)
+                "<p style='text-align:center'>Team Python Pioneers</p>", unsafe_allow_html=True)
     page = st.radio("NAVIGATION", ["🏠 Introduction", "📘 Data Overview", "🧹 Data Cleaning & Features",
                                    "📊 Insights", "🤖 Model Performance", "📌 Key Takeaways & Conclusion"],
                     label_visibility="collapsed")
@@ -210,20 +222,26 @@ with st.sidebar:
 # 1. INTRODUCTION
 # =====================================================================
 if page == "🏠 Introduction":
-    st.markdown("<div class='hdr'><h1>❤️ HeartFailure Clinical Explorer</h1><p>Hospital heart-failure analytics dashboard</p></div>", unsafe_allow_html=True)
+    st.markdown("<div class='hdr'><h1>❤️ HeartFailure Clinical Explorer</h1><p>Heart-failure data analytics, outcomes and risk exploration</p></div>", unsafe_allow_html=True)
 
     intro_img = Path(__file__).parent / "heartfailure_intro.png"
     if intro_img.exists():
         st.image(str(intro_img), use_container_width=True)
 
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown("<div class='member'><div style='font-size:32px'>📌</div><div class='n'>Project</div><div class='r'>HeartFailure Clinical Explorer</div></div>", unsafe_allow_html=True)
+    with c2:
+        st.markdown("<div class='member'><div style='font-size:32px'>👥</div><div class='n'>Team</div><div class='r'>Python Pioneers</div></div>", unsafe_allow_html=True)
+    with c3:
+        st.markdown("<div class='member'><div style='font-size:32px'>🧑‍💻</div><div class='n'>Team Members</div><div class='r'>Aditi Mishra • Saranya Shanmugam • Sahi Laguduva • Sudha madhuri Basa</div></div>", unsafe_allow_html=True)
+
     st.markdown("""
-    <div class='section'>
-    <h3 style='color:#073B4C;margin-top:0'>Project Name</h3>
-    <p style='font-size:20px'><b>HeartFailure Clinical Explorer</b></p>
-    <h3 style='color:#073B4C'>Team Name</h3>
-    <p style='font-size:20px'><b>Pycore</b></p>
-    <h3 style='color:#073B4C'>Team Members</h3>
-    <p style='font-size:18px'>Jenifer &nbsp;•&nbsp; Gunashree &nbsp;•&nbsp; Saranya &nbsp;•&nbsp; Sarika &nbsp;•&nbsp; Savithapriya</p>
+    <div class='section' style='margin-top:18px'>
+    <h3 style='color:#073B4C;margin-top:0'>Project Focus</h3>
+    <p style='font-size:17px;line-height:1.7;margin-bottom:0'>
+    The <b>HeartFailure Clinical Explorer</b> organizes patient, cardiac, laboratory, history, hospitalization and outcome information into an interactive analytics dashboard for understanding clinical patterns and mortality/readmission outcomes.
+    </p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -231,62 +249,111 @@ if page == "🏠 Introduction":
 # 2. DATA OVERVIEW
 # =====================================================================
 elif page == "📘 Data Overview":
-    st.markdown("<div class='hdr'><h1>📘 HeartFailure Dataset Overview</h1><p>What this project studies and what information the dataset contains</p></div>", unsafe_allow_html=True)
+    st.markdown("<div class='hdr'><h1>📘 HeartFailure Data Overview</h1><p>Understanding the source dataset, the patient information it contains, and how our project uses it</p></div>", unsafe_allow_html=True)
 
     overview_img = Path(__file__).parent / "heartfailure_data_overview.png"
     if overview_img.exists():
         st.image(str(overview_img), use_container_width=True)
 
+    project_patients = int(df["inpatient_number"].nunique()) if "inpatient_number" in df.columns else len(df)
     st.markdown("""
     <div class='section'>
     <h3 style='color:#073B4C;margin-top:0'>What is the HeartFailure dataset?</h3>
-    <p>
-    The <b>HeartFailure dataset</b> is a retrospective hospital dataset of patients admitted with heart failure at
-    <b>Zigong Fourth People's Hospital, Sichuan, China</b>. The original PhysioNet resource contains information on
-    <b>2,008 patients and 168 variables</b>, with records collected between <b>December 2016 and June 2019</b>.
-    The project combines admission characteristics, cardiac measurements, laboratory results, medical history,
-    hospitalization information and follow-up outcomes.
+    <p style='font-size:16px;line-height:1.7'>
+    The <b>HeartFailure dataset</b> used in this project comes from the PhysioNet resource
+    <b>“Hospitalized patients with heart failure: integrating electronic healthcare records and external outcome data.”</b>
+    It is a retrospective hospital dataset containing <b>2,008 patients and 168 variables</b>. The patients were admitted with heart failure at
+    <b>Zigong Fourth People's Hospital, Sichuan, China</b>, and the source study covers <b>December 2016 through June 2019</b>.
     </p>
-    <p>
-    Follow-up information includes outcomes at <b>28 days, 3 months and 6 months</b>. This makes the dataset useful
-    for studying both what patients looked like at admission and what happened after hospitalization.
+    <p style='font-size:16px;line-height:1.7;margin-bottom:0'>
+    The source data combines information recorded around hospitalization with follow-up information collected at
+    <b>28 days, 3 months and 6 months</b>. This allows the project to examine both the patient's clinical profile at admission and later outcomes such as mortality and readmission.
     </p>
     </div>
     """, unsafe_allow_html=True)
 
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: kpi("👥", "Patients in project data", f"{df['inpatient_number'].nunique():,}")
-    with c2: kpi("🧩", "Source tables integrated", "7")
-    with c3: kpi("📋", "Project columns", f"{df.shape[1]:,}")
-    with c4: kpi("📅", "Source study period", "2016–2019")
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1: kpi("👥", "Original patients", "2,008")
+    with c2: kpi("📋", "Original variables", "168")
+    with c3: kpi("🗂️", "Source tables integrated", "7")
+    with c4: kpi("👤", "Patients in project", f"{project_patients:,}")
+    with c5: kpi("📅", "Follow-up", "28d • 3m • 6m", size=20)
 
     st.markdown("""
     <div class='section'>
-    <h3 style='color:#073B4C;margin-top:0'>What information is included?</h3>
-    <table style='width:100%;border-collapse:collapse'>
-    <tr><th style='text-align:left;padding:10px;border-bottom:1px solid #D9E7EB'>Domain</th><th style='text-align:left;padding:10px;border-bottom:1px solid #D9E7EB'>Examples</th><th style='text-align:left;padding:10px;border-bottom:1px solid #D9E7EB'>Why it matters in this project</th></tr>
-    <tr><td style='padding:10px'>Demography</td><td style='padding:10px'>Gender, age category, height, weight, BMI, occupation</td><td style='padding:10px'>Describes the patient population</td></tr>
-    <tr><td style='padding:10px'>Cardiac status</td><td style='padding:10px'>NYHA, Killip, LVEF, LVEDD, E/A and valve measures</td><td style='padding:10px'>Represents heart-failure severity and cardiac function</td></tr>
-    <tr><td style='padding:10px'>History & comorbidity</td><td style='padding:10px'>Prior disease and comorbidity indicators</td><td style='padding:10px'>Provides clinical background</td></tr>
-    <tr><td style='padding:10px'>Laboratory data</td><td style='padding:10px'>BNP, troponin, kidney, blood, inflammation and metabolic markers</td><td style='padding:10px'>Captures physiological and organ-system status</td></tr>
-    <tr><td style='padding:10px'>Hospitalization & treatment</td><td style='padding:10px'>Admission, length of stay, respiratory support and medications</td><td style='padding:10px'>Describes the hospital episode</td></tr>
-    <tr><td style='padding:10px'>Outcomes</td><td style='padding:10px'>In-hospital status, mortality, readmission and emergency return</td><td style='padding:10px'>Provides the outcomes analyzed in the dashboard</td></tr>
+    <h3 style='color:#073B4C;margin-top:0'>What does the dataset contain?</h3>
+    <p style='line-height:1.6'>The HeartFailure data covers several complementary clinical domains. Together, these domains provide a patient-level view rather than relying on a single biomarker or diagnosis field.</p>
+    <table style='width:100%;border-collapse:collapse;font-size:15px'>
+    <tr><th style='text-align:left;padding:11px;border-bottom:2px solid #D9E7EB'>Clinical domain</th><th style='text-align:left;padding:11px;border-bottom:2px solid #D9E7EB'>Examples in this project</th><th style='text-align:left;padding:11px;border-bottom:2px solid #D9E7EB'>Role in the analysis</th></tr>
+    <tr><td style='padding:11px'><b>Patient profile</b></td><td style='padding:11px'>Gender, age category, height, weight, BMI, occupation</td><td style='padding:11px'>Describes who is represented in the hospitalized cohort</td></tr>
+    <tr><td style='padding:11px'><b>Cardiac severity</b></td><td style='padding:11px'>NYHA, Killip, LVEF, LVEDD, E/A, valve measures</td><td style='padding:11px'>Characterizes heart-failure severity and cardiac function</td></tr>
+    <tr><td style='padding:11px'><b>Medical history</b></td><td style='padding:11px'>Prior myocardial infarction, vascular disease, diabetes, COPD and comorbidity measures</td><td style='padding:11px'>Adds prior disease burden and clinical context</td></tr>
+    <tr><td style='padding:11px'><b>Laboratory & biomarkers</b></td><td style='padding:11px'>BNP, troponin, creatinine, eGFR, urea, albumin, hemoglobin, electrolytes, inflammation markers</td><td style='padding:11px'>Represents cardiac injury, kidney function, nutrition, blood status and systemic stress</td></tr>
+    <tr><td style='padding:11px'><b>Hospital episode</b></td><td style='padding:11px'>Admission type, length of stay, respiratory support, oxygen use, discharge information</td><td style='padding:11px'>Describes the hospitalization and disposition</td></tr>
+    <tr><td style='padding:11px'><b>Medications</b></td><td style='padding:11px'>Medication indicators created from prescription records</td><td style='padding:11px'>Represents medication exposure during the hospital episode</td></tr>
+    <tr><td style='padding:11px'><b>Outcomes</b></td><td style='padding:11px'>In-hospital status, 28-day/3-month/6-month mortality and readmission, emergency return</td><td style='padding:11px'>Provides the endpoints examined by the descriptive and predictive analyses</td></tr>
     </table>
     </div>
     """, unsafe_allow_html=True)
 
-    left, right = st.columns([1, 1.25])
+    # ----------------------------- DEMOGRAPHIC PROFILE -----------------------------
+    st.markdown("""
+    <div class='section'>
+    <h3 style='color:#073B4C;margin-top:0'>👤 Patient Demographic Profile</h3>
+    <p style='line-height:1.6;margin-bottom:10px'>This descriptive profile shows who is represented in the HeartFailure cohort before clinical severity and outcome analysis. It summarizes gender, source age category, BMI and occupation without treating these distributions as clinical recommendations.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    d1, d2 = st.columns(2)
+    with d1:
+        if gender_col and gender_col in df.columns:
+            g = df[gender_col].dropna().astype(str).str.strip().value_counts().reset_index()
+            g.columns = ["Gender", "Patients"]
+            fig = px.pie(g, names="Gender", values="Patients", hole=0.52, title="Gender distribution", color_discrete_sequence=[TEAL2, BLUE, GREEN])
+            fig.update_layout(height=320, legend_title="", margin=dict(t=55,l=10,r=10,b=10))
+            st.plotly_chart(style(fig, 320), width="stretch")
+        else:
+            st.info("Gender data is not available in the current dataset.")
+    with d2:
+        if agecat_col and agecat_col in df.columns:
+            a = df[agecat_col].dropna().astype(str).str.strip().value_counts().reset_index()
+            a.columns = ["Age category", "Patients"]
+            fig = px.bar(a, x="Age category", y="Patients", text_auto=True, title="Age-category distribution", color_discrete_sequence=[TEAL2])
+            fig.update_layout(height=320, xaxis_title="Age category", yaxis_title="Patients")
+            st.plotly_chart(style(fig, 320), width="stretch")
+        else:
+            st.info("Age-category data is not available in the current dataset.")
+
+    d3, d4 = st.columns(2)
+    with d3:
+        if bmi_col and bmi_col in df.columns:
+            bmi = pd.to_numeric(df[bmi_col], errors="coerce").dropna()
+            if len(bmi):
+                fig = px.histogram(x=bmi, nbins=25, title="BMI distribution", labels={"x":"BMI", "y":"Patients"}, color_discrete_sequence=[GREEN])
+                fig.update_layout(height=300, bargap=0.05)
+                st.plotly_chart(style(fig, 300), width="stretch")
+        else:
+            st.info("BMI data is not available in the current dataset.")
+    with d4:
+        if "occupation" in df.columns:
+            occ = df["occupation"].dropna().astype(str).str.strip().value_counts().head(8).reset_index()
+            occ.columns = ["Occupation", "Patients"]
+            fig = px.bar(occ, x="Patients", y="Occupation", orientation="h", text_auto=True, title="Most common occupation groups", color_discrete_sequence=[BLUE])
+            fig.update_layout(height=300, yaxis_title="", xaxis_title="Patients")
+            st.plotly_chart(style(fig, 300), width="stretch")
+        else:
+            st.info("Occupation data is not available in the current dataset.")
+
+    left, right = st.columns([1.05, 1])
     with left:
         st.markdown("""
         <div class='section'>
-        <h4 style='color:#073B4C;margin-top:0'>How our project uses the dataset</h4>
-        <ol>
-        <li><b>Integrate:</b> combine the seven source tables using the patient identifier.</li>
-        <li><b>Clean:</b> remove invalid values, address missingness and standardize the analytical dataset.</li>
-        <li><b>Engineer:</b> create clinically interpretable groups and derived features.</li>
-        <li><b>Analyze:</b> examine patterns in severity, biomarkers, readmission and mortality.</li>
-        <li><b>Model:</b> evaluate Logistic Regression, Random Forest and an Artificial Neural Network for mortality-risk analysis.</li>
-        </ol>
+        <h3 style='color:#073B4C;margin-top:0'>From the source dataset to our project dataset</h3>
+        <div class='found'><b>1. Integrate</b><br>Seven source tables are linked through <b>inpatient_number</b> to create a patient-level analytical dataset.</div>
+        <div class='found'><b>2. Clean</b><br>Invalid or inconsistent values are reviewed, missingness is assessed, and variables are standardized for analysis.</div>
+        <div class='found'><b>3. Transform</b><br>Prescription records are converted into patient-level medication indicators and clinically interpretable features are engineered.</div>
+        <div class='found'><b>4. Analyze</b><br>Descriptive and prescriptive analyses examine severity, biomarkers, comorbidities, mortality, readmission and emergency-return patterns.</div>
+        <div class='todo'><b>5. Model</b><br>Logistic Regression and Random Forest are used as comparison models alongside the project's primary Artificial Neural Network analysis.</div>
         </div>
         """, unsafe_allow_html=True)
     with right:
@@ -295,14 +362,21 @@ elif page == "📘 Data Overview":
         if available:
             rows=[]
             labels={"re_admission_within_28_days":"Readmission — 28 days","re_admission_within_3_months":"Readmission — 3 months","re_admission_within_6_months":"Readmission — 6 months","death_within_28_days":"Mortality — 28 days","death_within_3_months":"Mortality — 3 months","death_within_6_months":"Mortality — 6 months"}
-            for c in available: rows.append((labels[c], float(df[c].mean()*100)))
+            for c in available: rows.append((labels[c], float(pd.to_numeric(df[c], errors="coerce").mean()*100)))
             odf=pd.DataFrame(rows,columns=["Outcome","Percent"])
-            fig=px.bar(odf,x="Percent",y="Outcome",orientation="h",text_auto=".1f",color_discrete_sequence=[TEAL2],title="Observed follow-up outcomes in the project data")
-            fig.update_layout(xaxis_title="Patients (%)",yaxis_title="",height=340)
+            fig=px.bar(odf,x="Percent",y="Outcome",orientation="h",text_auto=".1f",color_discrete_sequence=[TEAL2],title="Observed outcome rates in our project data")
+            fig.update_layout(xaxis_title="Patients (%)",yaxis_title="",height=360)
             st.plotly_chart(style(fig),width="stretch")
+        st.markdown("""
+        <div class='section'>
+        <h4 style='color:#073B4C;margin-top:0'>Why this dataset fits the project</h4>
+        <p style='line-height:1.6;margin-bottom:8px'>The dataset links <b>admission severity</b>, <b>cardiac function</b>, <b>laboratory markers</b>, <b>comorbidity</b> and <b>follow-up outcomes</b>. That combination supports the project's central question: whether multiple patient characteristics can be combined to identify patterns associated with mortality and other adverse outcomes.</p>
+        <p style='line-height:1.6;margin-bottom:0'><b>Important:</b> this is a retrospective, single-center dataset. The source documentation notes that the data are aggregated at the hospitalization level and do not provide time-series measurements throughout the stay, so model results should be treated as analytical findings rather than clinically validated decision rules.</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.info("Source: PhysioNet — Hospitalized patients with heart failure: integrating electronic healthcare records and external outcome data, version 1.3. The original resource is restricted-access and should be cited according to the PhysioNet data-use requirements.")
-    st.link_button("Open the PhysioNet HeartFailure dataset description", "https://www.physionet.org/content/heart-failure-zigong/1.3/")
+    st.info("Source: PhysioNet, HeartFailure dataset version 1.3. The source describes 2,008 patients, 168 variables, the December 2016–June 2019 study period, and follow-up at 28 days, 3 months and 6 months.")
+    st.link_button("Open the official PhysioNet HeartFailure dataset description", "https://www.physionet.org/content/heart-failure-zigong/1.3/")
 
 # =====================================================================
 # 3. DATA CLEANING & FEATURE ENGINEERING
