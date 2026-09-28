@@ -508,7 +508,7 @@ elif page == "🩺 Interactive Clinical Insights":
         }
         marker = st.selectbox("2. Select Kidney Marker", list(marker_options.keys()))
         outcome_label = st.selectbox("3. Select Outcome", ["6-Month Readmission", "6-Month Mortality"])
-        col, _, pmap = marker_options[marker]
+        col, _, _, pmap = marker_options[marker]
         target = outcome_series(outcome_label)
         sub = insight_df.dropna(subset=[col, target]).copy()
         high = pmap[outcome_label]
