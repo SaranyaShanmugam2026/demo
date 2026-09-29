@@ -42,9 +42,9 @@ READMIT, DEATH = BLUE, ALERT                            # same meaning on every 
 # ----------------------------- STYLE -----------------------------
 st.markdown(f"""
 <style>
-section[data-testid="stSidebar"] > div:first-child {
+section[data-testid="stSidebar"] > div:first-child {{
     padding-top: 0 !important;
-}
+}}
 .stApp {{background:{BG};}}
 section[data-testid="stSidebar"] {{background:linear-gradient(180deg,#073B4C,#0B5D6B,#087F5B);}}
 section[data-testid="stSidebar"] * {{color:white !important;}}
