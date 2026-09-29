@@ -45,6 +45,10 @@ st.markdown(f"""
 section[data-testid="stSidebar"] > div:first-child {{
     padding-top: 0 !important;
 }}
+section[data-testid="stSidebar"] .block-container {{
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}}
 .stApp {{background:{BG};}}
 section[data-testid="stSidebar"] {{background:linear-gradient(180deg,#073B4C,#0B5D6B,#087F5B);}}
 section[data-testid="stSidebar"] * {{color:white !important;}}
@@ -276,7 +280,7 @@ def cv_probs(data, features, target, model_name, repeats=1):
 
 # ----------------------------- SIDEBAR -----------------------------
 with st.sidebar:
-    st.markdown("<div style='margin-top:-38px;margin-bottom:-4px;text-align:center'>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top:-2px;margin-bottom:-6px;text-align:center'>", unsafe_allow_html=True)
     st.image(LOGO_PATH, width=110)
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("<div style='text-align:center;font-size:48px'>❤️</div>"
