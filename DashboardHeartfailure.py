@@ -1,9 +1,6 @@
 # =====================================================================
-#  HeartFailure Clinical Explorer
-#  Team Python Pioneers | NumpyNinja Python Hackathon
-#
-#  Run:  streamlit run DashboardHeartfailure.py
-#  Data: Cardiac_Cleaned_Data.xlsb in the same folder
+#  HeartFailure
+#  Team 2 Python Pioneers | Python Hackathon September 2026
 # =====================================================================
 
 import streamlit as st
@@ -14,7 +11,6 @@ import plotly.graph_objects as go
 from pathlib import Path
 import html
 from scipy import stats
-
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
@@ -36,8 +32,8 @@ BLUE = "#087F9B"
 GREYTXT = "#637B83"
 BG = "#F4F9FB"
 ALERT = "#D1495B"      # only for danger / death highlights
-RAMP = ["#B7E4D8", "#6CC3B0", TEAL2, TEAL, NAVY]      # light = better, dark = worse
-READMIT, DEATH = BLUE, ALERT                            # same meaning on every chart
+RAMP = ["#B7E4D8", "#6CC3B0", TEAL2, TEAL, NAVY]    
+READMIT, DEATH = BLUE, ALERT                         
 
 # ----------------------------- STYLE -----------------------------
 st.markdown(f"""
@@ -148,51 +144,33 @@ LOGO_PATH = Path(__file__).parent / "numpy_ninja_logo.png"
 def kpi(icon, title, value, size=26):
     st.markdown(f"<div class='kpi'><div class='i'>{icon}</div><div class='t'>{title}</div>"
                 f"<div class='v' style='font-size:{size}px'>{value}</div></div>", unsafe_allow_html=True)
-
-
 def found(text):
     st.markdown(f"<div class='found'><b>What we found:</b> {text}</div>", unsafe_allow_html=True)
-
-
 def todo(text):
     st.markdown(f"<div class='todo'><b>Action:</b> {text}</div>", unsafe_allow_html=True)
-
-
 def kpi2(icon, title, value):
     """Compact tinted clinical KPI card."""
     st.markdown(f"<div class='kpi2'><div class='t'>{icon} {title}</div><div class='v'>{value}</div></div>",
                 unsafe_allow_html=True)
-
-
 def section(title, kind):
     """Tab heading with a small Descriptive / Prescriptive / Predictive label."""
     st.markdown(f"<div class='sec'>{title} <span class='badge'>{kind}</span></div>", unsafe_allow_html=True)
-
-
 def badge(text):
     st.markdown(f"<span class='badge'>{text}</span>", unsafe_allow_html=True)
-
-
 def style(fig, height=380):
     fig.update_layout(template="plotly_white", height=height, title_font_color=NAVY,
                       font_color=NAVY, margin=dict(t=60, l=10, r=10, b=10), legend_title="")
     return fig
-
-
 def bar(x, y, title, colours, ytitle="% of patients", fmt=".1f", height=380):
     fig = px.bar(x=x, y=y, text_auto=fmt, color=x, color_discrete_sequence=colours, title=title)
     fig.update_layout(showlegend=False, xaxis_title="", yaxis_title=ytitle)
     return style(fig, height)
-
-
 def two_outcomes(table, title):
     long = table.reset_index().melt(id_vars=table.index.name, var_name="Outcome", value_name="Percent")
     fig = px.bar(long, x=table.index.name, y="Percent", color="Outcome", barmode="group", text_auto=".1f",
                  color_discrete_map={"Readmitted in 6 months": READMIT, "Died in 6 months": DEATH, "Came back": READMIT, "Died": DEATH}, title=title)
     fig.update_layout(yaxis_title="% of patients", xaxis_title="")
     return style(fig, 400)
-
-
 def pct(x):
     return f"{x * 100:.1f}%"
 
@@ -265,8 +243,6 @@ def model_set():
         "ANN (neural network)": Pipeline([("impute", SimpleImputer(strategy="median")), ("scale", StandardScaler()),
                                           ("model", MLPClassifier(hidden_layer_sizes=(8,), alpha=1.0, max_iter=2000, random_state=0))]),
     }
-
-
 @st.cache_data
 def cv_probs(data, features, target, model_name, repeats=1):
     """Risk for every patient, predicted by a model that never saw that patient (5-fold cross-validation)."""
@@ -281,14 +257,13 @@ def cv_probs(data, features, target, model_name, repeats=1):
 # ----------------------------- SIDEBAR -----------------------------
 with st.sidebar:
     st.markdown("<div style='margin-top:-2px;margin-bottom:-6px;text-align:center'>", unsafe_allow_html=True)
-    st.image(LOGO_PATH, width=110)
+    st.image(LOGO_PATH, width=100)
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("<div style='text-align:center;font-size:48px'>❤️</div>"
                 "<h2 style='text-align:center;margin:0'>HeartFailure</h2>", unsafe_allow_html=True)
     page = st.radio("NAVIGATION", ["🏠 Introduction", "📘 Data Overview", "🧹 Data Cleaning & Feature Engineering",
                                    "🩺 Interactive Clinical Insights", "🤖 Model Performance", "📌 Key Takeaways & Conclusion"],
                     label_visibility="collapsed")
-
 
 # =====================================================================
 # 1. INTRODUCTION
@@ -318,8 +293,6 @@ if page == "🏠 Introduction":
         f"<div style='display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px'>{members}</div>"
         "<div class='herobar'><span>⭐ Early Risk Detection</span><span>❤️ Better Decisions</span>"
         "<span>👥 Healthier Hearts</span></div></div>", unsafe_allow_html=True)
-
-
 # =====================================================================
 # 2. DATA OVERVIEW
 # =====================================================================
@@ -387,8 +360,6 @@ elif page == "📘 Data Overview":
                                     f"<div class='nm' style='color:{colr}'>{nm}</div><ul>{bullets}</ul></div>",
                                     unsafe_allow_html=True)
                         st.plotly_chart(mini(chart()), width="stretch", config={"displayModeBar": False})
-
-
 # =====================================================================
 # 3. DATA CLEANING & FEATURE ENGINEERING
 # =====================================================================
@@ -579,8 +550,7 @@ elif page == "🩺 Interactive Clinical Insights":
     target = OUTCOMES[out_label]
     is_death = target.startswith("death")
     make_groups, meaning = markers[marker]
-
-    # ---------------- build the groups ----------------
+ # ---------------- build the groups ----------------
     if make_groups is None:   # predicted risk groups from the model
         feats = DEATH_FEATURES if is_death else READMIT_FEATURES
         with st.spinner("Scoring patients with the model..."):
@@ -653,8 +623,6 @@ elif page == "🩺 Interactive Clinical Insights":
             + (f" Small groups (under 30 patients): {html.escape(', '.join(map(str, small.index)))}." if len(small) else "")
             + "</p>", unsafe_allow_html=True)
         st.markdown(f"<div class='todo'><b>What this means:</b> {meaning}</div>", unsafe_allow_html=True)
-
-
 # =====================================================================
 # 5. MODEL PERFORMANCE
 # =====================================================================
