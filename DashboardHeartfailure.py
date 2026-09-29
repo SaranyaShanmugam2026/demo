@@ -1,6 +1,7 @@
 # =====================================================================
 #  HeartFailure Clinical Explorer
 #  Team Python Pioneers | NumpyNinja Python Hackathon
+
 # =====================================================================
 
 import streamlit as st
@@ -24,7 +25,7 @@ from sklearn.metrics import (accuracy_score, precision_score, recall_score,
 
 st.set_page_config(page_title="HeartFailure Clinical Explorer", page_icon="❤️", layout="wide")
 
-# ----------------------------- COLOURS  -----------------------------
+# ----------------------------- COLOURS (from our original file) -----------------------------
 NAVY = "#073B4C"       # dark teal / headings
 TEAL = "#0B5D6B"
 GREEN = "#087F5B"
@@ -95,8 +96,12 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{background:white;border-radius
 .checkbox .it {{font-size:17px;color:#073B4C;margin:16px 0;}}
 .pagetitle {{font-size:44px;font-weight:800;color:#073B4C;margin:10px 0 18px 0;}}
 .dash-title {{font-size:52px;font-weight:800;color:#073B4C;margin:0 0 18px 0;}}
-.kpi2 {{background:white;border-radius:16px;padding:14px 18px;box-shadow:0 4px 16px rgba(7,59,76,.08);min-height:92px;}}
-.kpi2 .t {{font-size:14px;color:#1F2D33;}} .kpi2 .v {{font-size:28px;color:#073B4C;margin-top:6px;}}
+.kpi2 {{position:relative;background:linear-gradient(135deg,#F7FBFC 0%,#EEF7F8 100%);border:1px solid #D8E8EB;border-radius:16px;padding:13px 16px 14px 18px;box-shadow:0 5px 16px rgba(7,59,76,.08);min-height:88px;overflow:hidden;}}
+.kpi2::before {{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:#087F9B;}}
+.kpi2 .t {{font-size:13px;color:#526A72;font-weight:700;line-height:1.25;}} .kpi2 .v {{font-size:27px;color:#073B4C;font-weight:800;margin-top:5px;}}
+.kpi2:nth-child(2)::before {{background:#C94B4B;}}
+.kpi2:nth-child(3)::before {{background:#D59A2A;}}
+.kpi2:nth-child(4)::before {{background:#774571;}}
 .sec {{font-size:32px;font-weight:700;color:#073B4C;margin:14px 0 6px 0;}}
 .sec .badge {{font-size:13px;vertical-align:middle;margin-left:8px;}}
 section[data-testid="stSidebar"] div[data-baseweb="select"] div,
@@ -145,7 +150,7 @@ def todo(text):
 
 
 def kpi2(icon, title, value):
-    """Plain white KPI card for the HeartFailure dashboard."""
+    """Compact tinted clinical KPI card."""
     st.markdown(f"<div class='kpi2'><div class='t'>{icon} {title}</div><div class='v'>{value}</div></div>",
                 unsafe_allow_html=True)
 
@@ -293,8 +298,8 @@ if page == "🏠 Introduction":
         "stroke-width='7' stroke-linejoin='round' stroke-linecap='round'/></svg>")
     st.markdown(
         f"<div class='hero'>{heart_svg}"
-        "<p class='t1'>HEART FAILURE</p>"
-        "<p class='t2'>CLINICAL OUTCOME ANALYTICS</p>"
+        "<p class='t1'>CARDIAC FAILURE</p>"
+        "<p class='t2'>HEART FAILURE DATASET</p>"
         "<div class='sub'>Spotting high-risk heart failure patients on the day they are admitted</div>"
         "<div class='line'></div>"
         "<div style='text-align:center'><span class='pill'>TEAM 2: PYTHONPIONEERS</span>"
