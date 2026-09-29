@@ -296,8 +296,8 @@ if page == "🏠 Introduction":
         "stroke-width='7' stroke-linejoin='round' stroke-linecap='round'/></svg>")
     st.markdown(
         f"<div class='hero'>{heart_svg}"
-        "<p class='t1'>CARDIAC FAILURE</p>"
-        "<p class='t2'>HEART FAILURE DATASET</p>"
+        "<p class='t1'>HEART FAILURE</p>"
+        "<p class='t2'>CLINICAL OUTCOME ANALYTICS</p>"
         "<div class='sub'>Spotting high-risk heart failure patients on the day they are admitted</div>"
         "<div class='line'></div>"
         "<div style='text-align:center'><span class='pill'>TEAM 2: PYTHONPIONEERS</span>"
