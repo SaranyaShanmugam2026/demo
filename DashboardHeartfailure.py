@@ -1,9 +1,6 @@
 # =====================================================================
 #  HeartFailure Clinical Explorer
 #  Team Python Pioneers | NumpyNinja Python Hackathon
-#
-#  Run:  streamlit run DashboardHeartfailure.py
-#  Data: Cardiac_Cleaned_Data.xlsb in the same folder
 # =====================================================================
 
 import streamlit as st
@@ -27,7 +24,7 @@ from sklearn.metrics import (accuracy_score, precision_score, recall_score,
 
 st.set_page_config(page_title="HeartFailure Clinical Explorer", page_icon="❤️", layout="wide")
 
-# ----------------------------- COLOURS (from our original file) -----------------------------
+# ----------------------------- COLOURS  -----------------------------
 NAVY = "#073B4C"       # dark teal / headings
 TEAL = "#0B5D6B"
 GREEN = "#087F5B"
@@ -445,6 +442,8 @@ elif page == "🩺 Interactive Clinical Insights":
             "Kidney stage (eGFR)": (lambda: df["ckd_stage"],
                                     "Heart and kidneys pull each other down. eGFR below 45 (stage G3b or worse) should be "
                                     "treated as high risk: careful water-tablet dosing, potassium checks, early follow-up."),
+            "Creatinine": (lambda: cut("creatinine_enzymatic_method", [0, 110, 1e9], ["Normal (≤110)", "High (>110)"]),
+                         "Higher creatinine was associated with more 6-month readmission and mortality in this dataset."),
             "Urea": (lambda: cut("urea", [0, 7.1, 15, 1e9], ["Normal (<7.1)", "Raised (7.1–15)", "High (≥15)"]),
                      "Urea builds up when the kidneys are not clearing waste, often because the heart pumps poorly."),
             "Chronic kidney disease (history)": (lambda: yes_no(df["moderate_to_severe_chronic_kidney_disease"] == 1, "Yes", "No"),
