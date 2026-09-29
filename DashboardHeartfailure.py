@@ -1,7 +1,9 @@
 # =====================================================================
 #  HeartFailure Clinical Explorer
 #  Team Python Pioneers | NumpyNinja Python Hackathon
-
+#
+#  Run:  streamlit run DashboardHeartfailure.py
+#  Data: Cardiac_Cleaned_Data.xlsb in the same folder
 # =====================================================================
 
 import streamlit as st
@@ -271,7 +273,9 @@ def cv_probs(data, features, target, model_name, repeats=1):
 
 # ----------------------------- SIDEBAR -----------------------------
 with st.sidebar:
+    st.markdown("<div style='margin-top:-10px;margin-bottom:-4px;text-align:center'>", unsafe_allow_html=True)
     st.image(LOGO_PATH, width=110)
+    st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("<div style='text-align:center;font-size:48px'>❤️</div>"
                 "<h2 style='text-align:center;margin:0'>HeartFailure</h2>", unsafe_allow_html=True)
     page = st.radio("NAVIGATION", ["🏠 Introduction", "📘 Data Overview", "🧹 Data Cleaning & Feature Engineering",
