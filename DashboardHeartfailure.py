@@ -98,8 +98,8 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{background:white;border-radius
 .checkbox .it {{font-size:17px;color:#073B4C;margin:16px 0;}}
 .pagetitle {{font-size:44px;font-weight:800;color:#073B4C;margin:10px 0 18px 0;}}
 .dash-title {{font-size:52px;font-weight:800;color:#073B4C;margin:0 0 18px 0;}}
-.kpi2 {{background:white;border-radius:20px;padding:22px 24px;box-shadow:0 4px 16px rgba(7,59,76,.08);min-height:130px;}}
-.kpi2 .t {{font-size:16px;color:#1F2D33;}} .kpi2 .v {{font-size:40px;color:#073B4C;margin-top:10px;}}
+.kpi2 {{background:white;border-radius:16px;padding:14px 18px;box-shadow:0 4px 16px rgba(7,59,76,.08);min-height:92px;}}
+.kpi2 .t {{font-size:14px;color:#1F2D33;}} .kpi2 .v {{font-size:28px;color:#073B4C;margin-top:6px;}}
 .sec {{font-size:32px;font-weight:700;color:#073B4C;margin:14px 0 6px 0;}}
 .sec .badge {{font-size:13px;vertical-align:middle;margin-left:8px;}}
 section[data-testid="stSidebar"] div[data-baseweb="select"] div,
@@ -113,16 +113,17 @@ section[data-testid="stSidebar"] [data-testid="stSelectbox"] svg {{color:#073B4C
 section[data-testid="stSidebar"] [data-testid="stSelectbox"] [role="group"] {{background:white !important;border-radius:10px;}}
 
 /* Presentation sizing */
-.hero {{min-height:680px;padding-top:58px;}}
-.hero .t1 {{font-size:78px;}}
-.hero .t2 {{font-size:56px;}}
-.hero .sub {{font-size:21px;}}
-.tm .av {{width:76px;height:76px;font-size:34px;}}
-.tm .nm {{font-size:20px;}}
-.tm .rl {{font-size:15px;}}
-.herobar {{padding:24px 10px;font-size:21px;}}
+.hero {{min-height:520px;padding-top:42px;}}
+.hero .t1 {{font-size:62px;}}
+.hero .t2 {{font-size:46px;}}
+.hero .sub {{font-size:18px;}}
+.tm .av {{width:62px;height:62px;font-size:28px;}}
+.tm .nm {{font-size:18px;}}
+.tm .rl {{font-size:14px;}}
+.herobar {{padding:18px 10px;font-size:18px;}}
 .overview-fit {{margin-top:-8px;}}
 .qbox {{background:white;border:2px solid #087F5B;border-radius:12px;padding:12px 16px;margin:6px 0 12px 0;font-size:16px;color:#073B4C;}}
+.stSelectbox label {{font-size:17px !important;font-weight:800 !important;color:#073B4C !important;}}
 
 </style>
 """, unsafe_allow_html=True)
@@ -413,8 +414,6 @@ elif page == "🩺 Interactive Clinical Insights":
     with c3: kpi2("❤️", "Severe symptoms (NYHA 3–4)", pct((df["nyha_cardiac_function_classification"] >= 3).mean()))
     with c4: kpi2("🧪", "Median BNP", f"{df['brain_natriuretic_peptide'].median():.0f}")
     st.write("")
-    st.markdown("<div class='section' style='padding:12px 18px'>Choose an area, a marker and an outcome. "
-                "Each insight follows <b>Marker → Evidence → Finding → What it means</b>.</div>", unsafe_allow_html=True)
 
     # ---------------- helper to cut a column into labelled groups ----------------
     def cut(col, bins, labels):
